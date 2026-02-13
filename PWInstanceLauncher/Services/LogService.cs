@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace PWInstanceLauncher.Services
 {
     internal class LogService
