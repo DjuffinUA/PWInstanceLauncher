@@ -28,7 +28,11 @@ namespace PWInstanceLauncher.ViewModels
         public MainViewModel()
         {
             Config = _configService.Load();
-            EnsureGamePath();
+            if (!TryEnsureGamePath())
+            {
+                throw new Exception("Game path not selected.");
+            }
+
             Characters = new ObservableCollection<CharacterProfile>(Config.Characters);
 
             AddCharacterCommand = new RelayCommand(AddCharacter);
@@ -72,6 +76,7 @@ namespace PWInstanceLauncher.ViewModels
                 MessageBox.Show("Character profile is not selected.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+        }
 
             try
             {
