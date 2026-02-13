@@ -10,8 +10,8 @@ namespace PWInstanceLauncher.Services
         public void PlaceWindowOnCharacterDesktop(string login, IntPtr windowHandle)
         {
             EnsureHandle(windowHandle);
-            var desktop = GetOrCreateDesktop(login);
 
+            var desktop = GetOrCreateDesktop(login);
             VirtualDesktop.MoveToDesktop(windowHandle, desktop);
             desktop.Switch();
             ActivateWindow(windowHandle);
@@ -33,14 +33,9 @@ namespace PWInstanceLauncher.Services
             try
             {
                 var desktop = VirtualDesktop.FromHwnd(windowHandle);
-                if (desktop is null)
-                {
-                    return false;
-                }
-
-                desktop.Switch();
+                desktop?.Switch();
                 ActivateWindow(windowHandle);
-                return true;
+                return desktop is not null;
             }
             catch
             {
@@ -50,7 +45,7 @@ namespace PWInstanceLauncher.Services
 
         public bool TrySwitchToCharacterDesktop(string login, IntPtr windowHandle)
         {
-            if (string.IsNullOrWhiteSpace(login) || !_desktopByLogin.TryGetValue(login, out var desktop))
+            if (!_desktopByLogin.TryGetValue(login, out var desktop))
             {
                 return false;
             }
@@ -62,11 +57,6 @@ namespace PWInstanceLauncher.Services
 
         private VirtualDesktop GetOrCreateDesktop(string login)
         {
-            if (string.IsNullOrWhiteSpace(login))
-            {
-                throw new ArgumentException("Login is required for desktop mapping.", nameof(login));
-            }
-
             if (_desktopByLogin.TryGetValue(login, out var existing))
             {
                 return existing;

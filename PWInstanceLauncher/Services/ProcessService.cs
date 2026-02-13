@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Management;
 
 namespace PWInstanceLauncher.Services
@@ -6,6 +7,13 @@ namespace PWInstanceLauncher.Services
     internal class ProcessService
     {
         private const string ProcessName = "elementclient";
+
+        public bool IsGameExecutableValid(string gamePath)
+        {
+            return !string.IsNullOrWhiteSpace(gamePath) &&
+                   File.Exists(gamePath) &&
+                   Path.GetExtension(gamePath).Equals(".exe", StringComparison.OrdinalIgnoreCase);
+        }
 
         public Process? TryFindRunningByLogin(string login)
         {
@@ -22,7 +30,8 @@ namespace PWInstanceLauncher.Services
                     continue;
                 }
 
-                if (commandLine.Contains($"user:{login}", StringComparison.OrdinalIgnoreCase))
+                var loginToken = $"user:{login}";
+                if (commandLine.Contains(loginToken, StringComparison.OrdinalIgnoreCase))
                 {
                     return process;
                 }
