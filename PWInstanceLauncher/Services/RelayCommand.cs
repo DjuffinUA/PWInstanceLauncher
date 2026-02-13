@@ -21,9 +21,9 @@ public class RelayCommand : ICommand
 
 public class RelayCommand<T> : ICommand
 {
-    private readonly Action<T> _execute;
+    private readonly Action<T?> _execute;
 
-    public RelayCommand(Action<T> execute)
+    public RelayCommand(Action<T?> execute)
     {
         _execute = execute;
     }
@@ -35,6 +35,14 @@ public class RelayCommand<T> : ICommand
     public void Execute(object? parameter)
     {
         if (parameter is T t)
+        {
             _execute(t);
+            return;
+        }
+
+        if (parameter is null)
+        {
+            _execute(default);
+        }
     }
 }
