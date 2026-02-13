@@ -50,8 +50,8 @@ namespace PWInstanceLauncher.ViewModels
 
             if (!TryEnsureGamePath())
             {
+                SetInfo("Game executable is not selected.");
                 _logService.Warn("Game path is not selected on startup.");
-                throw new Exception("Game path not selected.");
             }
 
             AddCharacterCommand = new RelayCommand(AddCharacter);
@@ -68,7 +68,10 @@ namespace PWInstanceLauncher.ViewModels
 
             InitializeRuntimeState();
             _monitorTimer.Start();
-            SetInfo("Monitoring started.");
+            if (_configService.IsGamePathValid(Config.GamePath))
+            {
+                SetInfo("Monitoring started.");
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -163,7 +166,7 @@ namespace PWInstanceLauncher.ViewModels
             var profile = new CharacterProfile();
             var window = new EditCharacterWindow(profile);
 
-            if (window.ShowDialog() != true)
+            if (window.ShowDialog() == true)
             {
                 if (!IsLoginUnique(profile.Login))
                 {
