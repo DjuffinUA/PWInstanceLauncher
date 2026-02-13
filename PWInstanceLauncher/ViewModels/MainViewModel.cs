@@ -3,6 +3,7 @@ using PWInstanceLauncher.Models;
 using PWInstanceLauncher.Services;
 using PWInstanceLauncher.Views;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 
@@ -64,26 +65,73 @@ namespace PWInstanceLauncher.ViewModels
             }
         }
 
-        private void RemoveCharacter(CharacterProfile? profile)
+        private void LaunchCharacter(CharacterProfile? profile)
         {
             if (profile is null)
             {
+                MessageBox.Show("Character profile is not selected.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            var result = MessageBox.Show(
-                $"Remove character '{profile.Name}'?",
-                "Remove Character",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (result != MessageBoxResult.Yes)
+            try
             {
-                return;
-            }
+                if (!_processService.IsGameExecutableValid(Config.GamePath))
+                {
+                    EnsureGamePath();
 
-            Characters.Remove(profile);
-            Save();
+                    if (!_processService.IsGameExecutableValid(Config.GamePath))
+                    {
+                        MessageBox.Show("Game executable is invalid.", "Launch", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(profile.Login))
+                {
+                    MessageBox.Show("Login is empty.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var existingProcess = _processService.TryFindRunningByLogin(profile.Login);
+                if (existingProcess is not null)
+                {
+                    MessageBox.Show(
+                        $"Character with login '{profile.Login}' is already running (PID: {existingProcess.Id}).\n" +
+                        "Desktop switch/activation will be added on Stage 4.",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return;
+                }
+
+                var password = _credentialService.Decrypt(profile.EncryptedPassword);
+                var process = _processService.Launch(Config.GamePath, profile.Login, password);
+
+                var windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(30));
+                if (windowHandle == IntPtr.Zero)
+                {
+                    MessageBox.Show(
+                        "Process started, but main window handle was not detected within timeout.",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                MessageBox.Show(
+                    $"Character '{profile.Name}' launched successfully (PID: {process.Id}).",
+                    "Launch",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Launch failed: {ex.Message}",
+                    "Launch",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
 
         private void LaunchCharacter(CharacterProfile? profile)
@@ -99,6 +147,12 @@ namespace PWInstanceLauncher.ViewModels
                 if (!_configService.IsGamePathValid(Config.GamePath))
                 {
                     EnsureGamePath();
+
+                    if (!_configService.IsGamePathValid(Config.GamePath))
+                    {
+                        MessageBox.Show("Game executable is invalid.", "Launch", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
                 }
 
                 if (string.IsNullOrWhiteSpace(profile.Login))
@@ -116,11 +170,34 @@ namespace PWInstanceLauncher.ViewModels
                 var existingProcess = _processService.TryFindRunningByLogin(profile.Login);
                 if (existingProcess is not null && !existingProcess.HasExited)
                 {
-                    FocusExistingCharacter(existingProcess, profile.Login);
+                    MessageBox.Show(
+                        $"Character with login '{profile.Login}' is already running (PID: {existingProcess.Id}).\n" +
+                        "Desktop switch/activation will be added on Stage 4.",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                     return;
                 }
 
-                LaunchNewCharacter(profile);
+                var password = _credentialService.Decrypt(profile.EncryptedPassword);
+                var process = _processService.Launch(Config.GamePath, profile.Login, password);
+
+                var windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(30));
+                if (windowHandle == IntPtr.Zero)
+                {
+                    MessageBox.Show(
+                        "Process started, but main window handle was not detected within timeout.",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                MessageBox.Show(
+                    $"Character '{profile.Name}' launched successfully (PID: {process.Id}).",
+                    "Launch",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
             catch (FormatException)
             {
@@ -138,72 +215,6 @@ namespace PWInstanceLauncher.ViewModels
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
-        }
-
-        private void FocusExistingCharacter(System.Diagnostics.Process process, string login)
-        {
-            var windowHandle = process.MainWindowHandle;
-            if (windowHandle == IntPtr.Zero)
-            {
-                windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(5));
-            }
-
-            if (windowHandle == IntPtr.Zero)
-            {
-                MessageBox.Show("Running process found, but window handle is unavailable.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (Config.LaunchMode == LaunchMode.SeparateDesktop)
-            {
-                var switched = _desktopService.TrySwitchToCharacterDesktop(login, windowHandle);
-                if (!switched)
-                {
-                    switched = _desktopService.SwitchToDesktopWithWindow(windowHandle);
-                }
-
-                if (!switched)
-                {
-                    MessageBox.Show("Could not switch to character desktop, but window was activated.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _desktopService.ActivateWindow(windowHandle);
-                }
-            }
-            else
-            {
-                _desktopService.ActivateWindow(windowHandle);
-            }
-        }
-
-        private void LaunchNewCharacter(CharacterProfile profile)
-        {
-            var password = _credentialService.Decrypt(profile.EncryptedPassword);
-            var process = _processService.Launch(Config.GamePath, profile.Login, password);
-
-            var windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(30));
-            if (windowHandle == IntPtr.Zero)
-            {
-                MessageBox.Show(
-                    "Process started, but main window handle was not detected within timeout.",
-                    "Launch",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                return;
-            }
-
-            if (Config.LaunchMode == LaunchMode.SeparateDesktop)
-            {
-                _desktopService.PlaceWindowOnCharacterDesktop(profile.Login, windowHandle);
-            }
-            else
-            {
-                _desktopService.MoveWindowToCurrentDesktop(windowHandle);
-            }
-
-            MessageBox.Show(
-                $"Character '{profile.Name}' launched successfully (PID: {process.Id}).",
-                "Launch",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
         }
 
         private void EnsureGamePath()
