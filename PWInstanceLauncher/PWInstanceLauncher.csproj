@@ -9,8 +9,34 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="imeges\clas\dru.png" />
+    <None Remove="imeges\clas\luk.png" />
+    <None Remove="imeges\clas\mag.png" />
+    <None Remove="imeges\clas\mist.png" />
+    <None Remove="imeges\clas\priest.png" />
+    <None Remove="imeges\clas\sham.png" />
+    <None Remove="imeges\clas\sik.png" />
+    <None Remove="imeges\clas\sin.png" />
+    <None Remove="imeges\clas\tank.png" />
+    <None Remove="imeges\clas\var.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Slions.VirtualDesktop" Version="6.9.2" />
     <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="imeges\clas\dru.png" />
+    <Resource Include="imeges\clas\luk.png" />
+    <Resource Include="imeges\clas\mag.png" />
+    <Resource Include="imeges\clas\mist.png" />
+    <Resource Include="imeges\clas\priest.png" />
+    <Resource Include="imeges\clas\sham.png" />
+    <Resource Include="imeges\clas\sik.png" />
+    <Resource Include="imeges\clas\sin.png" />
+    <Resource Include="imeges\clas\tank.png" />
+    <Resource Include="imeges\clas\var.png" />
   </ItemGroup>
 
 </Project>
