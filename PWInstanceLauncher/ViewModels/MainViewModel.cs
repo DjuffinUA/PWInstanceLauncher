@@ -3,9 +3,7 @@ using PWInstanceLauncher.Models;
 using PWInstanceLauncher.Services;
 using PWInstanceLauncher.Views;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -18,23 +16,10 @@ namespace PWInstanceLauncher.ViewModels
         private readonly CredentialService _credentialService = new();
         private readonly ProcessService _processService = new();
         private readonly DesktopService _desktopService = new();
-        private readonly LogService _logService = new();
-        private readonly Dictionary<string, int> _runningProcessByLogin = new(StringComparer.OrdinalIgnoreCase);
-        private readonly DispatcherTimer _monitorTimer;
-
-        private string _statusMessage = "Ready";
 
         public AppConfig Config { get; }
         public ObservableCollection<CharacterProfile> Characters { get; }
         public Array LaunchModes { get; } = Enum.GetValues(typeof(LaunchMode));
-
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            private set => SetField(ref _statusMessage, value);
-        }
-
-        public string GamePathDisplay => Config.GamePath;
 
         public ICommand AddCharacterCommand { get; }
         public ICommand EditCharacterCommand { get; }
@@ -45,11 +30,8 @@ namespace PWInstanceLauncher.ViewModels
         public MainViewModel()
         {
             Config = _configService.Load();
-            _logService.Info("Application started. Config loaded.");
-
             if (!TryEnsureGamePath())
             {
-                _logService.Warn("Game path is not selected on startup.");
                 throw new Exception("Game path not selected.");
             }
 
@@ -59,20 +41,16 @@ namespace PWInstanceLauncher.ViewModels
             EditCharacterCommand = new RelayCommand<CharacterProfile>(EditCharacter);
             RemoveCharacterCommand = new RelayCommand<CharacterProfile>(RemoveCharacter);
             LaunchCommand = new RelayCommand<CharacterProfile>(LaunchCharacter);
-            ChangeGamePathCommand = new RelayCommand(ChangeGamePath);
 
             _monitorTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(3)
             };
-            _monitorTimer.Tick += (_, _) => MonitorRunningProcessesSafe();
+            _monitorTimer.Tick += (_, _) => MonitorRunningProcesses();
 
             InitializeRuntimeState();
             _monitorTimer.Start();
-            SetInfo("Monitoring started.");
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
 
         private void InitializeRuntimeState()
         {
@@ -94,20 +72,6 @@ namespace PWInstanceLauncher.ViewModels
                 RegisterRunningProcess(profile.Login, process.Id);
                 SetStatus(profile, "Running");
             }
-
-            _logService.Info("Runtime state initialized.");
-        }
-
-        private void MonitorRunningProcessesSafe()
-        {
-            try
-            {
-                MonitorRunningProcesses();
-            }
-            catch (Exception ex)
-            {
-                _logService.Error("Process monitor tick failed", ex);
-            }
         }
 
         private void MonitorRunningProcesses()
@@ -118,7 +82,6 @@ namespace PWInstanceLauncher.ViewModels
                 {
                     _runningProcessByLogin.Remove(login);
                     SetStatusByLogin(login, "Offline");
-                    SetInfo($"{login} switched to Offline.");
                 }
             }
 
@@ -164,14 +127,13 @@ namespace PWInstanceLauncher.ViewModels
             var profile = new CharacterProfile();
             var window = new EditCharacterWindow(profile);
 
-            if (window.ShowDialog() == true)
+            if (window.ShowDialog() != true)
             {
-                profile.RuntimeStatus = "Offline";
-                Characters.Add(profile);
-                Save();
-                SetInfo($"Character '{profile.Name}' added.");
-                _logService.Info($"Character '{profile.Name}' added.");
+                return;
             }
+
+            Characters.Add(profile);
+            Save();
         }
 
         private void EditCharacter(CharacterProfile? profile)
@@ -181,191 +143,171 @@ namespace PWInstanceLauncher.ViewModels
                 return;
             }
 
-            var oldLogin = profile.Login;
             var window = new EditCharacterWindow(profile);
             if (window.ShowDialog() == true)
             {
-                if (!string.Equals(oldLogin, profile.Login, StringComparison.OrdinalIgnoreCase))
-                {
-                    _runningProcessByLogin.Remove(oldLogin);
-                    SetStatus(profile, "Offline");
-                }
-
                 Save();
-                SetInfo($"Character '{profile.Name}' updated.");
-                _logService.Info($"Character '{profile.Name}' updated.");
             }
-        }
-
-        private void RemoveCharacter(CharacterProfile? profile)
-        {
-            if (profile is null)
-            {
-                return;
-            }
-
-            var result = MessageBox.Show(
-                $"Remove character '{profile.Name}'?",
-                "Remove Character",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                _runningProcessByLogin.Remove(profile.Login);
-                Characters.Remove(profile);
-                Save();
-                SetInfo($"Character '{profile.Name}' removed.");
-                _logService.Info($"Character '{profile.Name}' removed.");
-            }
-        }
-
-        private void ChangeGamePath()
-        {
-            var oldPath = Config.GamePath;
-            if (!TryEnsureGamePath(forcePrompt: true))
-            {
-                return;
-            }
-
-            OnPropertyChanged(nameof(GamePathDisplay));
-            SetInfo("Game path updated.");
-            _logService.Info($"Game path changed from '{oldPath}' to '{Config.GamePath}'.");
         }
 
         private void LaunchCharacter(CharacterProfile? profile)
         {
             if (profile is null)
             {
-                ShowWarning("Character profile is not selected.");
+                MessageBox.Show("Character profile is not selected.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
+            try
+            {
+                if (!_processService.IsGameExecutableValid(Config.GamePath))
+                {
+                    EnsureGamePath();
+
+                    if (!_processService.IsGameExecutableValid(Config.GamePath))
+                    {
+                        MessageBox.Show("Game executable is invalid.", "Launch", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(profile.Login))
+                {
+                    MessageBox.Show("Login is empty.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var existingProcess = _processService.TryFindRunningByLogin(profile.Login);
+                if (existingProcess is not null)
+                {
+                    MessageBox.Show(
+                        $"Character with login '{profile.Login}' is already running (PID: {existingProcess.Id}).\n" +
+                        "Desktop switch/activation will be added on Stage 4.",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return;
+                }
+
+                var password = _credentialService.Decrypt(profile.EncryptedPassword);
+                var process = _processService.Launch(Config.GamePath, profile.Login, password);
+
+                var windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(30));
+                if (windowHandle == IntPtr.Zero)
+                {
+                    MessageBox.Show(
+                        "Process started, but main window handle was not detected within timeout.",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                MessageBox.Show(
+                    $"Character '{profile.Name}' launched successfully (PID: {process.Id}).",
+                    "Launch",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Launch failed: {ex.Message}",
+                    "Launch",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private void LaunchCharacter(CharacterProfile? profile)
+        {
+            if (profile is null)
+            {
+                MessageBox.Show("Character profile is not selected.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             try
             {
-                if (!ValidateLaunchInput(profile))
+                if (!_configService.IsGamePathValid(Config.GamePath))
                 {
+                    EnsureGamePath();
+
+                    if (!_configService.IsGamePathValid(Config.GamePath))
+                    {
+                        MessageBox.Show("Game executable is invalid.", "Launch", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(profile.Login))
+                {
+                    MessageBox.Show("Login is empty.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(profile.EncryptedPassword))
+                {
+                    MessageBox.Show("Password is missing for this profile.", "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 var existingProcess = _processService.TryFindRunningByLogin(profile.Login);
                 if (existingProcess is not null && !existingProcess.HasExited)
                 {
-                    RegisterRunningProcess(profile.Login, existingProcess.Id);
-                    SetStatus(profile, "Running");
-                    FocusExistingCharacter(existingProcess, profile.Login);
-                    SetInfo($"Focused running character '{profile.Name}'.");
+                    MessageBox.Show(
+                        $"Character with login '{profile.Login}' is already running (PID: {existingProcess.Id}).\n" +
+                        "Desktop switch/activation will be added on Stage 4.",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                     return;
                 }
 
-                LaunchNewCharacter(profile);
+                var password = _credentialService.Decrypt(profile.EncryptedPassword);
+                var process = _processService.Launch(Config.GamePath, profile.Login, password);
+
+                var windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(30));
+                if (windowHandle == IntPtr.Zero)
+                {
+                    MessageBox.Show(
+                        "Process started, but main window handle was not detected within timeout.",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                MessageBox.Show(
+                    $"Character '{profile.Name}' launched successfully (PID: {process.Id}).",
+                    "Launch",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
             catch (FormatException)
             {
-                ShowError("Saved password data is invalid. Please edit profile and re-enter password.");
-                _logService.Warn($"Invalid encrypted password format for login '{profile.Login}'.");
+                MessageBox.Show(
+                    "Saved password data is invalid. Please edit profile and re-enter password.",
+                    "Launch",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                ShowError($"Launch failed: {ex.Message}");
-                _logService.Error($"Launch failed for login '{profile.Login}'", ex);
+                MessageBox.Show(
+                    $"Launch failed: {ex.Message}",
+                    "Launch",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 
-        private bool ValidateLaunchInput(CharacterProfile profile)
+        private void EnsureGamePath()
         {
-            if (!_configService.IsGamePathValid(Config.GamePath) && !TryEnsureGamePath())
+            if (_configService.IsGamePathValid(Config.GamePath))
             {
-                ShowWarning("Game executable is not selected.");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(profile.Login))
-            {
-                ShowWarning("Login is empty.");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(profile.EncryptedPassword))
-            {
-                ShowWarning("Password is missing for this profile.");
-                return false;
-            }
-
-            return true;
-        }
-
-        private void FocusExistingCharacter(Process process, string login)
-        {
-            var windowHandle = process.MainWindowHandle;
-            if (windowHandle == IntPtr.Zero)
-            {
-                windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(5));
-            }
-
-            if (windowHandle == IntPtr.Zero)
-            {
-                ShowWarning("Running process found, but window handle is unavailable.");
-                _logService.Warn($"Window handle unavailable for running login '{login}'.");
                 return;
-            }
-
-            if (Config.LaunchMode == LaunchMode.SeparateDesktop)
-            {
-                var switched = _desktopService.TrySwitchToCharacterDesktop(login, windowHandle)
-                               || _desktopService.SwitchToDesktopWithWindow(windowHandle);
-
-                if (!switched)
-                {
-                    _desktopService.ActivateWindow(windowHandle);
-                    ShowWarning("Could not switch desktop. Window has been activated on current desktop.");
-                    _logService.Warn($"Desktop switch fallback used for login '{login}'.");
-                }
-
-                return;
-            }
-
-            _desktopService.MoveWindowToCurrentDesktop(windowHandle);
-        }
-
-        private void LaunchNewCharacter(CharacterProfile profile)
-        {
-            var password = _credentialService.Decrypt(profile.EncryptedPassword);
-            var process = _processService.Launch(Config.GamePath, profile.Login, password);
-            RegisterRunningProcess(profile.Login, process.Id);
-            SetStatus(profile, "Running");
-
-            var windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(30));
-            if (windowHandle == IntPtr.Zero)
-            {
-                ShowWarning("Process started, but main window handle was not detected within timeout.");
-                _logService.Warn($"Main window handle timeout for login '{profile.Login}'.");
-                return;
-            }
-
-            if (Config.LaunchMode == LaunchMode.SeparateDesktop)
-            {
-                _desktopService.PlaceWindowOnCharacterDesktop(profile.Login, windowHandle);
-            }
-            else
-            {
-                _desktopService.MoveWindowToCurrentDesktop(windowHandle);
-            }
-
-            SetInfo($"Character '{profile.Name}' launched.");
-            _logService.Info($"Character '{profile.Name}' launched with PID {process.Id}.");
-            MessageBox.Show(
-                $"Character '{profile.Name}' launched successfully (PID: {process.Id}).",
-                "Launch",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-        }
-
-        private bool TryEnsureGamePath(bool forcePrompt = false)
-        {
-            if (!forcePrompt && _configService.IsGamePathValid(Config.GamePath))
-            {
-                return true;
             }
 
             var dialog = new OpenFileDialog
@@ -374,47 +316,14 @@ namespace PWInstanceLauncher.ViewModels
                 Title = "Select elementclient.exe"
             };
 
-            if (dialog.ShowDialog() != true)
+            if (dialog.ShowDialog() == true)
             {
-                return false;
+                Config.GamePath = dialog.FileName;
+                Save();
+                return;
             }
 
-            Config.GamePath = dialog.FileName;
-            Save();
-            return true;
-        }
-
-        private void SetStatusByLogin(string login, string status)
-        {
-            var profile = Characters.FirstOrDefault(c => string.Equals(c.Login, login, StringComparison.OrdinalIgnoreCase));
-            if (profile is not null)
-            {
-                SetStatus(profile, status);
-            }
-        }
-
-        private static void SetStatus(CharacterProfile profile, string status)
-        {
-            profile.RuntimeStatus = status;
-        }
-
-        private void SetInfo(string text)
-        {
-            StatusMessage = text;
-        }
-
-        private void ShowWarning(string text)
-        {
-            SetInfo(text);
-            MessageBox.Show(text, "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
-            _logService.Warn(text);
-        }
-
-        private void ShowError(string text)
-        {
-            SetInfo(text);
-            MessageBox.Show(text, "Launch", MessageBoxButton.OK, MessageBoxImage.Error);
-            _logService.Error(text);
+            throw new Exception("Game path not selected.");
         }
 
         public void Save()
