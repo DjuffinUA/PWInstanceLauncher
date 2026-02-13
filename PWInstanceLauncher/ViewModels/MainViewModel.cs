@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace PWInstanceLauncher.ViewModels
 {
@@ -39,6 +40,85 @@ namespace PWInstanceLauncher.ViewModels
             EditCharacterCommand = new RelayCommand<CharacterProfile>(EditCharacter);
             RemoveCharacterCommand = new RelayCommand<CharacterProfile>(RemoveCharacter);
             LaunchCommand = new RelayCommand<CharacterProfile>(LaunchCharacter);
+
+            _monitorTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3)
+            };
+            _monitorTimer.Tick += (_, _) => MonitorRunningProcesses();
+
+            InitializeRuntimeState();
+            _monitorTimer.Start();
+        }
+
+        private void InitializeRuntimeState()
+        {
+            foreach (var profile in Characters)
+            {
+                SetStatus(profile, "Offline");
+
+                if (string.IsNullOrWhiteSpace(profile.Login))
+                {
+                    continue;
+                }
+
+                var process = _processService.TryFindRunningByLogin(profile.Login);
+                if (process is null || process.HasExited)
+                {
+                    continue;
+                }
+
+                RegisterRunningProcess(profile.Login, process.Id);
+                SetStatus(profile, "Running");
+            }
+        }
+
+        private void MonitorRunningProcesses()
+        {
+            foreach (var login in _runningProcessByLogin.Keys.ToList())
+            {
+                if (!IsProcessAlive(_runningProcessByLogin[login]))
+                {
+                    _runningProcessByLogin.Remove(login);
+                    SetStatusByLogin(login, "Offline");
+                }
+            }
+
+            foreach (var profile in Characters)
+            {
+                if (string.IsNullOrWhiteSpace(profile.Login) || _runningProcessByLogin.ContainsKey(profile.Login))
+                {
+                    continue;
+                }
+
+                var process = _processService.TryFindRunningByLogin(profile.Login);
+                if (process is null || process.HasExited)
+                {
+                    SetStatus(profile, "Offline");
+                    continue;
+                }
+
+                RegisterRunningProcess(profile.Login, process.Id);
+                SetStatus(profile, "Running");
+            }
+        }
+
+        private static bool IsProcessAlive(int processId)
+        {
+            try
+            {
+                var process = Process.GetProcessById(processId);
+                return !process.HasExited;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void RegisterRunningProcess(string login, int processId)
+        {
+            _runningProcessByLogin[login] = processId;
         }
 
         private void AddCharacter()
