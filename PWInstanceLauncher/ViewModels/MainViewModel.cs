@@ -186,14 +186,19 @@ namespace PWInstanceLauncher.ViewModels
                 return;
             }
 
+            var oldName = profile.Name;
             var oldLogin = profile.Login;
+            var oldEncryptedPassword = profile.EncryptedPassword;
+
             var window = new EditCharacterWindow(profile);
             if (window.ShowDialog() == true)
             {
                 if (!IsLoginUnique(profile.Login, profile))
                 {
                     ShowWarning($"Login '{profile.Login}' already exists. Use unique login.");
+                    profile.Name = oldName;
                     profile.Login = oldLogin;
+                    profile.EncryptedPassword = oldEncryptedPassword;
                     return;
                 }
 
@@ -207,9 +212,6 @@ namespace PWInstanceLauncher.ViewModels
                 SetInfo($"Character '{profile.Name}' updated.");
                 _logService.Info($"Character '{profile.Name}' updated.");
             }
-
-            Characters.Add(profile);
-            Save();
         }
 
         private void RemoveCharacter(CharacterProfile? profile)
@@ -278,7 +280,6 @@ namespace PWInstanceLauncher.ViewModels
             catch (FormatException)
             {
                 ShowError("Saved password data is invalid. Please edit profile and re-enter password.");
-                _logService.Warn($"Invalid encrypted password format for login '{profile.Login}'.");
             }
             catch (Exception ex)
             {
@@ -333,7 +334,6 @@ namespace PWInstanceLauncher.ViewModels
             if (windowHandle == IntPtr.Zero)
             {
                 ShowWarning("Running process found, but window handle is unavailable.");
-                _logService.Warn($"Window handle unavailable for running login '{login}'.");
                 return;
             }
 
@@ -346,7 +346,6 @@ namespace PWInstanceLauncher.ViewModels
                 {
                     _desktopService.ActivateWindow(windowHandle);
                     ShowWarning("Could not switch desktop. Window has been activated on current desktop.");
-                    _logService.Warn($"Desktop switch fallback used for login '{login}'.");
                 }
 
                 return;
@@ -366,7 +365,6 @@ namespace PWInstanceLauncher.ViewModels
             if (windowHandle == IntPtr.Zero)
             {
                 ShowWarning("Process started, but main window handle was not detected within timeout.");
-                _logService.Warn($"Main window handle timeout for login '{profile.Login}'.");
                 return;
             }
 
