@@ -6,9 +6,15 @@ using System.Threading.Tasks;
 
 namespace PWInstanceLauncher.Models
 {
-    internal class AppConfig
+    public enum LaunchMode
+    {
+        SeparateDesktop,
+        CurrentDesktop
+    }
+    public class AppConfig
     {
         public string GamePath { get; set; } = "";
+        public LaunchMode LaunchMode { get; set; } = LaunchMode.SeparateDesktop;
         public List<CharacterProfile> Characters { get; set; } = new();
     }
 }

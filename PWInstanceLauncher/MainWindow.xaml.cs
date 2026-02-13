@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using PWInstanceLauncher.Models;
+using PWInstanceLauncher.ViewModels;
+using PWInstanceLauncher.Views;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -8,7 +11,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using PWInstanceLauncher.ViewModels;
 
 namespace PWInstanceLauncher
 {
@@ -21,6 +23,18 @@ namespace PWInstanceLauncher
         {
             InitializeComponent();
             DataContext = new MainViewModel();
+        }
+
+        private void Edit_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is CharacterProfile profile)
+            {
+                var window = new EditCharacterWindow(profile);
+                if (window.ShowDialog() == true)
+                {
+                    ((MainViewModel)DataContext).Save();
+                }
+            }
         }
     }
 }

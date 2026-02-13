@@ -6,6 +6,14 @@
 
     <StackPanel Margin="10">
 
+        <TextBlock Text="Launch Mode:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+        <ComboBox Width="180"
+              SelectedItem="{Binding Config.LaunchMode, Mode=TwoWay}">
+            <ComboBoxItem Content="Separate Desktop"/>
+            <ComboBoxItem Content="Current Desktop"/>
+        </ComboBox>
+
         <Button Content="Add Character"
                 Command="{Binding AddCharacterCommand}"
                 Margin="0,0,0,10"/>
@@ -19,6 +27,9 @@
                                 Command="{Binding DataContext.LaunchCommand,
                                 RelativeSource={RelativeSource AncestorType=Window}}"
                                 CommandParameter="{Binding}"/>
+                        <Button Content="Edit"
+                                Click="Edit_Click"
+                                Margin="5,0"/>
                     </StackPanel>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

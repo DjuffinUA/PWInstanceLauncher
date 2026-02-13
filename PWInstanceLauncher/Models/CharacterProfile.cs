@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PWInstanceLauncher.Models
 {
-    internal class CharacterProfile
+    public class CharacterProfile
     {
         public string Name { get; set; } = "";
         public string Login { get; set; } = "";
