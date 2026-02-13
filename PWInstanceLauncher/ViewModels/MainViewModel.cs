@@ -10,7 +10,7 @@ using System.Windows.Threading;
 
 namespace PWInstanceLauncher.ViewModels
 {
-    internal class MainViewModel
+    internal class MainViewModel : INotifyPropertyChanged
     {
         private readonly ConfigService _configService = new();
         private readonly CredentialService _credentialService = new();
@@ -25,6 +25,7 @@ namespace PWInstanceLauncher.ViewModels
         public ICommand EditCharacterCommand { get; }
         public ICommand RemoveCharacterCommand { get; }
         public ICommand LaunchCommand { get; }
+        public ICommand ChangeGamePathCommand { get; }
 
         public MainViewModel()
         {
@@ -329,6 +330,23 @@ namespace PWInstanceLauncher.ViewModels
         {
             Config.Characters = Characters.ToList();
             _configService.Save(Config);
+        }
+
+        private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+            {
+                return false;
+            }
+
+            field = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return true;
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
