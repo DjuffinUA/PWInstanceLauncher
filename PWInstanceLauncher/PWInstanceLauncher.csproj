@@ -39,4 +39,8 @@
     <Resource Include="imeges\clas\var.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="imeges\icon\" />
+  </ItemGroup>
+
 </Project>
