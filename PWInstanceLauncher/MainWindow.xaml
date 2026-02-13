@@ -2,12 +2,19 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="PW Instance Launcher"
-        Height="450" Width="420">
+        Height="520" Width="520">
 
     <StackPanel Margin="10">
+        <TextBlock Text="Game Path:" FontWeight="SemiBold"/>
+        <TextBlock Text="{Binding GamePathDisplay}" TextWrapping="Wrap" Margin="0,2,0,6"/>
+        <Button Content="Change Game Path"
+                Width="180"
+                Command="{Binding ChangeGamePathCommand}"
+                Margin="0,0,0,10"/>
+
         <TextBlock Text="Launch Mode:" VerticalAlignment="Center" Margin="0,0,10,4"/>
 
-        <ComboBox Width="200"
+        <ComboBox Width="220"
                   Margin="0,0,0,10"
                   ItemsSource="{Binding LaunchModes}"
                   SelectedItem="{Binding Config.LaunchMode, Mode=TwoWay}"/>
@@ -19,25 +26,37 @@
         <ItemsControl ItemsSource="{Binding Characters}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                        <TextBlock Text="{Binding Name}" Width="140" VerticalAlignment="Center"/>
-                        <Button Content="Launch"
-                                Width="70"
+                    <Grid Margin="0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="55"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Content="Launch"
                                 Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                 CommandParameter="{Binding}"/>
-                        <Button Content="Edit"
-                                Width="55"
-                                Margin="5,0,0,0"
+                        <Button Grid.Column="2" Content="Edit" Margin="5,0,0,0"
                                 Command="{Binding DataContext.EditCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                 CommandParameter="{Binding}"/>
-                        <Button Content="Remove"
-                                Width="70"
-                                Margin="5,0,0,0"
+                        <Button Grid.Column="3" Content="Remove" Margin="5,0,0,0"
                                 Command="{Binding DataContext.RemoveCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                 CommandParameter="{Binding}"/>
-                    </StackPanel>
+                        <TextBlock Grid.Column="4"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Text="{Binding RuntimeStatus}"/>
+                    </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+
+        <Separator Margin="0,8,0,8"/>
+        <TextBlock Text="Status:" FontWeight="SemiBold"/>
+        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
     </StackPanel>
 </Window>
