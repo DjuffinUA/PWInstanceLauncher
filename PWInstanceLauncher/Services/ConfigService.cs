@@ -5,7 +5,7 @@ namespace PWInstanceLauncher.Services
 {
     internal class ConfigService
     {
-        private readonly string _configPath = "config.json";
+        private readonly string _configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
 
         public AppConfig Load()
         {
