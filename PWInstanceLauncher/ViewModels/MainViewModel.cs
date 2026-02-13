@@ -163,7 +163,7 @@ namespace PWInstanceLauncher.ViewModels
             var profile = new CharacterProfile();
             var window = new EditCharacterWindow(profile);
 
-            if (window.ShowDialog() == true)
+            if (window.ShowDialog() != true)
             {
                 if (!IsLoginUnique(profile.Login))
                 {
@@ -207,6 +207,9 @@ namespace PWInstanceLauncher.ViewModels
                 SetInfo($"Character '{profile.Name}' updated.");
                 _logService.Info($"Character '{profile.Name}' updated.");
             }
+
+            Characters.Add(profile);
+            Save();
         }
 
         private void RemoveCharacter(CharacterProfile? profile)
