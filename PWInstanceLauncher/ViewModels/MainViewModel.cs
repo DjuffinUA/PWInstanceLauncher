@@ -14,6 +14,7 @@ namespace PWInstanceLauncher.ViewModels
         private readonly ConfigService _configService = new();
         private readonly CredentialService _credentialService = new();
         private readonly ProcessService _processService = new();
+        private readonly DesktopService _desktopService = new();
 
         public AppConfig Config { get; }
         public ObservableCollection<CharacterProfile> Characters { get; }
