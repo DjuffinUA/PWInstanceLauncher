@@ -163,7 +163,7 @@ namespace PWInstanceLauncher.ViewModels
             var profile = new CharacterProfile();
             var window = new EditCharacterWindow(profile);
 
-            if (window.ShowDialog() == true)
+            if (window.ShowDialog() != true)
             {
                 if (!IsLoginUnique(profile.Login))
                 {
