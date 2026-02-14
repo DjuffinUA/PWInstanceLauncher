@@ -24,8 +24,8 @@
 
         <TextBlock Text="Character image" Foreground="White"/>
         <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
-            <Border Width="32" Height="32" BorderBrush="White" BorderThickness="1" Margin="0,0,10,0">
-                <Image x:Name="SelectedImagePreview" Width="32" Height="32" Stretch="Fill"/>
+            <Border Width="48" Height="48" BorderBrush="White" BorderThickness="1" Margin="0,0,10,0">
+                <Image x:Name="SelectedImagePreview" Width="48" Height="48" Stretch="Fill"/>
             </Border>
             <ComboBox x:Name="ImagePathBox"
                       Width="270"
