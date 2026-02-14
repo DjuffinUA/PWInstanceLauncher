@@ -10,16 +10,25 @@
 
   <ItemGroup>
     <None Remove="gragon.png" />
+    <None Remove="imeges\clas\Archer.png" />
+    <None Remove="imeges\clas\Assassin.png" />
     <None Remove="imeges\clas\dru.png" />
+    <None Remove="imeges\clas\Druid.png" />
     <None Remove="imeges\clas\luk.png" />
     <None Remove="imeges\clas\mag.png" />
     <None Remove="imeges\clas\mist.png" />
+    <None Remove="imeges\clas\Mystic.png" />
     <None Remove="imeges\clas\priest.png" />
+    <None Remove="imeges\clas\Seeker.png" />
     <None Remove="imeges\clas\sham.png" />
+    <None Remove="imeges\clas\Shaman.png" />
     <None Remove="imeges\clas\sik.png" />
     <None Remove="imeges\clas\sin.png" />
     <None Remove="imeges\clas\tank.png" />
     <None Remove="imeges\clas\var.png" />
+    <None Remove="imeges\clas\Warrior.png" />
+    <None Remove="imeges\clas\Werewolf.png" />
+    <None Remove="imeges\clas\Wizard.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,16 +38,16 @@
 
   <ItemGroup>
     <Resource Include="gragon.png" />
-    <Resource Include="imeges\clas\dru.png" />
-    <Resource Include="imeges\clas\luk.png" />
-    <Resource Include="imeges\clas\mag.png" />
-    <Resource Include="imeges\clas\mist.png" />
-    <Resource Include="imeges\clas\priest.png" />
-    <Resource Include="imeges\clas\sham.png" />
-    <Resource Include="imeges\clas\sik.png" />
-    <Resource Include="imeges\clas\sin.png" />
-    <Resource Include="imeges\clas\tank.png" />
-    <Resource Include="imeges\clas\var.png" />
+    <Resource Include="imeges\clas\Archer.png" />
+    <Resource Include="imeges\clas\Assassin.png" />
+    <Resource Include="imeges\clas\Druid.png" />
+    <Resource Include="imeges\clas\Mystic.png" />
+    <Resource Include="imeges\clas\Priest.png" />
+    <Resource Include="imeges\clas\Seeker.png" />
+    <Resource Include="imeges\clas\Shaman.png" />
+    <Resource Include="imeges\clas\Warrior.png" />
+    <Resource Include="imeges\clas\Werewolf.png" />
+    <Resource Include="imeges\clas\Wizard.png" />
   </ItemGroup>
 
   <ItemGroup>

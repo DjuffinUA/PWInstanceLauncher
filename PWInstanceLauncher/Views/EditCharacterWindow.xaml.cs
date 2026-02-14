@@ -88,17 +88,17 @@ namespace PWInstanceLauncher.Views
         }
 
         private static readonly string[] AvailableClassImages =
-        {
-            "dru",
-            "luk",
-            "mag",
-            "mist",
-            "priest",
-            "sham",
-            "sik",
-            "sin",
-            "tank",
-            "var"
+        {            
+            "Archer", 
+			      "Assassin",
+			      "Druid", 
+			      "Mystic", 
+			      "Priest", 
+			      "Seeker", 
+			      "Shaman", 
+			      "Warrior", 
+			      "Werewolf",
+            "Wizard"
         };
 
         private static List<ImageOption> BuildImageOptions()
