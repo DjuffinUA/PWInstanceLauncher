@@ -26,13 +26,9 @@ namespace PWInstanceLauncher.Views
 
             var imageOptions = BuildImageOptions();
             ImagePathBox.ItemsSource = imageOptions;
-            ImagePathBox.SelectedValue = string.IsNullOrWhiteSpace(profile.ImagePath)
-                ? CharacterProfile.DefaultImagePath
-                : profile.ImagePath;
-
-            if (ImagePathBox.SelectedItem is null && imageOptions.Count > 0)
+            if (!string.IsNullOrWhiteSpace(profile.ImagePath))
             {
-                ImagePathBox.SelectedIndex = 0;
+                ImagePathBox.SelectedValue = profile.ImagePath;
             }
 
             UpdateImagePreview();
@@ -63,7 +59,7 @@ namespace PWInstanceLauncher.Views
 
             Profile.Name = name;
             Profile.Login = login;
-            Profile.ImagePath = (ImagePathBox.SelectedValue as string) ?? CharacterProfile.DefaultImagePath;
+            Profile.ImagePath = (ImagePathBox.SelectedValue as string) ?? Profile.ImagePath;
 
             if (!string.IsNullOrWhiteSpace(passwordInput))
             {
@@ -81,21 +77,27 @@ namespace PWInstanceLauncher.Views
 
         private void UpdateImagePreview()
         {
-            var selectedPath = (ImagePathBox.SelectedValue as string) ?? CharacterProfile.DefaultImagePath;
+            var selectedPath = ImagePathBox.SelectedValue as string;
+            if (string.IsNullOrWhiteSpace(selectedPath))
+            {
+                SelectedImagePreview.Source = null;
+                return;
+            }
+
             SelectedImagePreview.Source = new BitmapImage(new Uri(selectedPath, UriKind.Relative));
         }
 
         private static readonly string[] AvailableClassImages =
         {            
             "Archer", 
-			"Assassin",
-			"Druid", 
-			"Mystic", 
-			"Priest", 
-			"Seeker", 
-			"Shaman", 
-			"Warrior", 
-			"Werewolf",
+			      "Assassin",
+			      "Druid", 
+			      "Mystic", 
+			      "Priest", 
+			      "Seeker", 
+			      "Shaman", 
+			      "Warrior", 
+			      "Werewolf",
             "Wizard"
         };
 
