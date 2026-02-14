@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Edit Character" Height="380" Width="360" ResizeMode="NoResize" Icon="/Views/PWInstanceLauncher.png">
+        Title="Edit Character" Height="450" Width="420" ResizeMode="NoResize" Icon="/Views/PWInstanceLauncher.png">
     <Window.Background>
         <ImageBrush ImageSource="/gragon.png" Stretch="None"/>
     </Window.Background>
@@ -24,11 +24,11 @@
 
         <TextBlock Text="Character image" Foreground="White"/>
         <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
-            <Border Width="48" Height="48" BorderBrush="White" BorderThickness="1" Margin="0,0,10,0">
-                <Image x:Name="SelectedImagePreview" Width="48" Height="48" Stretch="Fill"/>
+            <Border Width="56" Height="56" BorderBrush="White" BorderThickness="1" Margin="0,0,10,0">
+                <Image x:Name="SelectedImagePreview" Width="56" Height="56" Stretch="Fill"/>
             </Border>
             <ComboBox x:Name="ImagePathBox"
-                      Width="270"
+                      Width="330"
                       DisplayMemberPath="DisplayName"
                       SelectedValuePath="Path"
                       SelectionChanged="ImagePathBox_SelectionChanged"
