@@ -90,14 +90,14 @@ namespace PWInstanceLauncher.Views
         private static readonly string[] AvailableClassImages =
         {            
             "Archer", 
-			      "Assassin",
-			      "Druid", 
-			      "Mystic", 
-			      "Priest", 
-			      "Seeker", 
-			      "Shaman", 
-			      "Warrior", 
-			      "Werewolf",
+			"Assassin",
+			"Druid", 
+			"Mystic", 
+			"Priest", 
+			"Seeker", 
+			"Shaman", 
+			"Warrior", 
+			"Werewolf",
             "Wizard"
         };
 
