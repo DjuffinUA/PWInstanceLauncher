@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System.Reflection;
+using System.Resources;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using PWInstanceLauncher.Models;
@@ -28,7 +30,9 @@ namespace PWInstanceLauncher.Views
             ImagePathBox.ItemsSource = imageOptions;
             if (!string.IsNullOrWhiteSpace(profile.ImagePath))
             {
-                ImagePathBox.SelectedValue = profile.ImagePath;
+                var selectedOption = imageOptions.FirstOrDefault(option =>
+                    string.Equals(option.Path, profile.ImagePath, StringComparison.OrdinalIgnoreCase));
+                ImagePathBox.SelectedValue = selectedOption?.Path ?? profile.ImagePath;
             }
 
             UpdateImagePreview();
@@ -87,27 +91,26 @@ namespace PWInstanceLauncher.Views
             SelectedImagePreview.Source = new BitmapImage(new Uri(selectedPath, UriKind.Relative));
         }
 
-        private static readonly string[] AvailableClassImages =
-        {            
-            "Archer", 
-			"Assassin",
-			"Druid", 
-			"Mystic", 
-			"Priest", 
-			"Seeker", 
-			"Shaman", 
-			"Warrior", 
-			"Werewolf",
-            "Wizard"
-        };
-
         private static List<ImageOption> BuildImageOptions()
         {
-            return AvailableClassImages
-                .Select(name => new ImageOption
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceName = $"{assembly.GetName().Name}.g.resources";
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream is null)
+            {
+                return [];
+            }
+
+            using var reader = new ResourceReader(stream);
+            return reader.Cast<System.Collections.DictionaryEntry>()
+                .Select(entry => entry.Key?.ToString())
+                .Where(key => !string.IsNullOrWhiteSpace(key) && key.StartsWith("imeges/clas/", StringComparison.OrdinalIgnoreCase) && key.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                .Select(key => key!)
+                .OrderBy(key => key)
+                .Select(key => new ImageOption
                 {
-                    Path = $"/imeges/clas/{name}.png",
-                    DisplayName = name
+                    Path = $"/{key}",
+                    DisplayName = Path.GetFileNameWithoutExtension(key)
                 })
                 .ToList();
         }
