@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using PWInstanceLauncher.Models;
 using PWInstanceLauncher.Services;
 
@@ -21,6 +24,19 @@ namespace PWInstanceLauncher.Views
 
             NameBox.Text = profile.Name;
             LoginBox.Text = profile.Login;
+
+            var imageOptions = BuildImageOptions();
+            ImagePathBox.ItemsSource = imageOptions;
+            ImagePathBox.SelectedValue = string.IsNullOrWhiteSpace(profile.ImagePath)
+                ? CharacterProfile.DefaultImagePath
+                : profile.ImagePath;
+
+            if (ImagePathBox.SelectedItem is null && imageOptions.Count > 0)
+            {
+                ImagePathBox.SelectedIndex = 0;
+            }
+
+            UpdateImagePreview();
 
             if (_isNewProfile)
             {
@@ -48,6 +64,7 @@ namespace PWInstanceLauncher.Views
 
             Profile.Name = name;
             Profile.Login = login;
+            Profile.ImagePath = (ImagePathBox.SelectedValue as string) ?? CharacterProfile.DefaultImagePath;
 
             if (!string.IsNullOrWhiteSpace(passwordInput))
             {
@@ -56,6 +73,52 @@ namespace PWInstanceLauncher.Views
 
             DialogResult = true;
             Close();
+        }
+
+        private void ImagePathBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateImagePreview();
+        }
+
+        private void UpdateImagePreview()
+        {
+            var selectedPath = (ImagePathBox.SelectedValue as string) ?? CharacterProfile.DefaultImagePath;
+            SelectedImagePreview.Source = new BitmapImage(new Uri(selectedPath, UriKind.Relative));
+        }
+
+        private static List<ImageOption> BuildImageOptions()
+        {
+            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var imagesDirectory = Path.Combine(baseDirectory, "imeges", "clas");
+
+            if (!Directory.Exists(imagesDirectory))
+            {
+                return new List<ImageOption>
+                {
+                    new() { Path = CharacterProfile.DefaultImagePath, DisplayName = "Default" }
+                };
+            }
+
+            return Directory
+                .GetFiles(imagesDirectory, "*.png")
+                .OrderBy(filePath => filePath)
+                .Select(filePath =>
+                {
+                    var fileName = Path.GetFileName(filePath);
+                    var nameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+                    return new ImageOption
+                    {
+                        Path = $"/imeges/clas/{fileName}",
+                        DisplayName = nameWithoutExtension
+                    };
+                })
+                .ToList();
+        }
+
+        private sealed class ImageOption
+        {
+            public string Path { get; init; } = string.Empty;
+            public string DisplayName { get; init; } = string.Empty;
         }
     }
 }

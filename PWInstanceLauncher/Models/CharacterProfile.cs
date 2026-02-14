@@ -10,6 +10,9 @@ namespace PWInstanceLauncher.Models
         private string _login = string.Empty;
         private string _encryptedPassword = string.Empty;
         private string _runtimeStatus = "Offline";
+        private string _imagePath = DefaultImagePath;
+
+        public const string DefaultImagePath = "/imeges/clas/var.png";
 
         public string Name
         {
@@ -27,6 +30,12 @@ namespace PWInstanceLauncher.Models
         {
             get => _encryptedPassword;
             set => SetField(ref _encryptedPassword, value);
+        }
+
+        public string ImagePath
+        {
+            get => string.IsNullOrWhiteSpace(_imagePath) ? DefaultImagePath : _imagePath;
+            set => SetField(ref _imagePath, value);
         }
 
         [JsonIgnore]
