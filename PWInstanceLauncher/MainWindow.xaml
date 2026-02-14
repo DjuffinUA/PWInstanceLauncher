@@ -85,7 +85,7 @@
         </Grid>
 
         <Separator Grid.Row="6" Margin="0,8,0,8"/>
-        <TextBlock Grid.Row="7" Text="Status:" FontWeight="SemiBold"/>
-        <TextBlock Grid.Row="8" Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="7" Text="Status:" FontWeight="SemiBold" Foreground="White"/>
+        <TextBlock Grid.Row="8" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="White"/>
     </Grid>
 </Window>
