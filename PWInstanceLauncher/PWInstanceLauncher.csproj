@@ -29,6 +29,7 @@
     <None Remove="imeges\clas\Warrior.png" />
     <None Remove="imeges\clas\Werewolf.png" />
     <None Remove="imeges\clas\Wizard.png" />
+    <None Remove="PWInstanceLauncher.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,6 +49,7 @@
     <Resource Include="imeges\clas\Warrior.png" />
     <Resource Include="imeges\clas\Werewolf.png" />
     <Resource Include="imeges\clas\Wizard.png" />
+    <Resource Include="PWInstanceLauncher.png" />
   </ItemGroup>
 
   <ItemGroup>
