@@ -10,6 +10,7 @@ namespace PWInstanceLauncher.Models
         private string _login = string.Empty;
         private string _encryptedPassword = string.Empty;
         private string _runtimeStatus = "Offline";
+        private string _imagePath = string.Empty;
 
         public string Name
         {
@@ -27,6 +28,12 @@ namespace PWInstanceLauncher.Models
         {
             get => _encryptedPassword;
             set => SetField(ref _encryptedPassword, value);
+        }
+
+        public string ImagePath
+        {
+            get => _imagePath;
+            set => SetField(ref _imagePath, value);
         }
 
         [JsonIgnore]

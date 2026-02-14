@@ -1,4 +1,6 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using PWInstanceLauncher.Models;
 using PWInstanceLauncher.Services;
 
@@ -21,6 +23,15 @@ namespace PWInstanceLauncher.Views
 
             NameBox.Text = profile.Name;
             LoginBox.Text = profile.Login;
+
+            var imageOptions = BuildImageOptions();
+            ImagePathBox.ItemsSource = imageOptions;
+            if (!string.IsNullOrWhiteSpace(profile.ImagePath))
+            {
+                ImagePathBox.SelectedValue = profile.ImagePath;
+            }
+
+            UpdateImagePreview();
 
             if (_isNewProfile)
             {
@@ -48,6 +59,7 @@ namespace PWInstanceLauncher.Views
 
             Profile.Name = name;
             Profile.Login = login;
+            Profile.ImagePath = (ImagePathBox.SelectedValue as string) ?? Profile.ImagePath;
 
             if (!string.IsNullOrWhiteSpace(passwordInput))
             {
@@ -56,6 +68,54 @@ namespace PWInstanceLauncher.Views
 
             DialogResult = true;
             Close();
+        }
+
+        private void ImagePathBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateImagePreview();
+        }
+
+        private void UpdateImagePreview()
+        {
+            var selectedPath = ImagePathBox.SelectedValue as string;
+            if (string.IsNullOrWhiteSpace(selectedPath))
+            {
+                SelectedImagePreview.Source = null;
+                return;
+            }
+
+            SelectedImagePreview.Source = new BitmapImage(new Uri(selectedPath, UriKind.Relative));
+        }
+
+        private static readonly string[] AvailableClassImages =
+        {
+            "dru",
+            "luk",
+            "mag",
+            "mist",
+            "priest",
+            "sham",
+            "sik",
+            "sin",
+            "tank",
+            "var"
+        };
+
+        private static List<ImageOption> BuildImageOptions()
+        {
+            return AvailableClassImages
+                .Select(name => new ImageOption
+                {
+                    Path = $"/imeges/clas/{name}.png",
+                    DisplayName = name
+                })
+                .ToList();
+        }
+
+        private sealed class ImageOption
+        {
+            public string Path { get; init; } = string.Empty;
+            public string DisplayName { get; init; } = string.Empty;
         }
     }
 }
