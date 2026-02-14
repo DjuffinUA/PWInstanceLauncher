@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using PWInstanceLauncher.Models;
@@ -86,31 +85,27 @@ namespace PWInstanceLauncher.Views
             SelectedImagePreview.Source = new BitmapImage(new Uri(selectedPath, UriKind.Relative));
         }
 
+        private static readonly string[] AvailableClassImages =
+        {
+            "dru",
+            "luk",
+            "mag",
+            "mist",
+            "priest",
+            "sham",
+            "sik",
+            "sin",
+            "tank",
+            "var"
+        };
+
         private static List<ImageOption> BuildImageOptions()
         {
-            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var imagesDirectory = Path.Combine(baseDirectory, "imeges", "clas");
-
-            if (!Directory.Exists(imagesDirectory))
-            {
-                return new List<ImageOption>
+            return AvailableClassImages
+                .Select(name => new ImageOption
                 {
-                    new() { Path = CharacterProfile.DefaultImagePath, DisplayName = "Default" }
-                };
-            }
-
-            return Directory
-                .GetFiles(imagesDirectory, "*.png")
-                .OrderBy(filePath => filePath)
-                .Select(filePath =>
-                {
-                    var fileName = Path.GetFileName(filePath);
-                    var nameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
-                    return new ImageOption
-                    {
-                        Path = $"/imeges/clas/{fileName}",
-                        DisplayName = nameWithoutExtension
-                    };
+                    Path = $"/imeges/clas/{name}.png",
+                    DisplayName = name
                 })
                 .ToList();
         }

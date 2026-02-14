@@ -31,7 +31,8 @@
                       Width="270"
                       DisplayMemberPath="DisplayName"
                       SelectedValuePath="Path"
-                      SelectionChanged="ImagePathBox_SelectionChanged"/>
+                      SelectionChanged="ImagePathBox_SelectionChanged"
+                      Foreground="Black"/>
         </StackPanel>
 
         <Button Content="Save" Click="Save_Click" Margin="0,8,0,0"/>
