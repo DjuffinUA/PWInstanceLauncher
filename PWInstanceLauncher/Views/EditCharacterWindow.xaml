@@ -30,11 +30,11 @@
                 <Image x:Name="SelectedImagePreview" Width="64" Height="64" Stretch="Fill"/>
             </Border>
             <ComboBox x:Name="ImagePathBox"
-                      Width="330"
+                      Width="259"
                       DisplayMemberPath="DisplayName"
                       SelectedValuePath="Path"
                       SelectionChanged="ImagePathBox_SelectionChanged"
-                      Foreground="Black"/>
+                      Foreground="Black" Height="28" VerticalAlignment="Center"/>
         </StackPanel>
 
         <Button Content="Save" Click="Save_Click" Margin="0,8,0,0" Width="200" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>

@@ -66,7 +66,7 @@
                                     <Border Width="64" Height="64" CornerRadius="32" ClipToBounds="True" Margin="0,0,8,0">
                                         <Image Source="{Binding ImagePath}" Width="64" Height="64" Stretch="Fill"/>
                                     </Border>
-                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" FontWeight="Bold" Foreground="White" />
                                 </StackPanel>
                                 <Button Grid.Column="1" Content="Launch"
                                         Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -74,21 +74,21 @@
                                         VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"/>
+                                        VerticalContentAlignment="Center" Width="70"/>
                                 <Button Grid.Column="2" Content="Edit" Margin="5,0,0,0"
                                         Command="{Binding DataContext.EditCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}"
                                         VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"/>
+                                        VerticalContentAlignment="Center" Width="50"/>
                                 <Button Grid.Column="3" Content="Remove" Margin="5,0,0,0"
                                         Command="{Binding DataContext.RemoveCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}"
                                         VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"/>
+                                        VerticalContentAlignment="Center" Width="70"/>
                                 <TextBlock Grid.Column="4"
                                            Margin="8,0,0,0"
                                            VerticalAlignment="Center"
