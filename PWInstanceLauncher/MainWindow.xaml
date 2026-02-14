@@ -21,7 +21,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="Game Path:" FontWeight="SemiBold"/>
-        <TextBlock Grid.Row="1" Text="{Binding GamePathDisplay}" TextWrapping="Wrap" Margin="0,2,0,6" Foreground="White"/>
+        <TextBlock Grid.Row="1" Text="{Binding GamePathDisplay}" TextWrapping="Wrap" Margin="0,2,0,6" Foreground="Black"/>
         <Button Grid.Row="2"
                 Content="Change Game Path"
                 Command="{Binding ChangeGamePathCommand}"
