@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="gragon.png" />
     <None Remove="imeges\clas\dru.png" />
     <None Remove="imeges\clas\luk.png" />
     <None Remove="imeges\clas\mag.png" />
@@ -27,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="gragon.png" />
     <Resource Include="imeges\clas\dru.png" />
     <Resource Include="imeges\clas\luk.png" />
     <Resource Include="imeges\clas\mag.png" />

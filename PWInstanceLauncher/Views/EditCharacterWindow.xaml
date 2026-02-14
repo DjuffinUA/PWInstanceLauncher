@@ -5,6 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Edit Character" Height="260" Width="320" ResizeMode="NoResize">
+    <Window.Background>
+        <ImageBrush ImageSource="/gragon.png" Stretch="None"/>
+    </Window.Background>
     <StackPanel Margin="10">
         <TextBlock Text="Name" />
         <TextBox x:Name="NameBox" Margin="0,4,0,8"/>
@@ -17,7 +20,7 @@
         <TextBlock x:Name="PasswordHint"
                    Text="Leave empty to keep current password"
                    FontSize="11"
-                   Foreground="Gray"
+                   Foreground="White"
                    Margin="0,0,0,8"/>
 
         <Button Content="Save" Click="Save_Click" Margin="0,8,0,0"/>
