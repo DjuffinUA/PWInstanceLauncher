@@ -20,8 +20,8 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Game Path:" FontWeight="SemiBold"/>
-        <TextBlock Grid.Row="1" Text="{Binding GamePathDisplay}" TextWrapping="Wrap" Margin="0,2,0,6" Foreground="Black"/>
+        <TextBlock Grid.Row="0" Text="Game Path:" FontWeight="SemiBold" HorizontalAlignment="Center" TextAlignment="Center"/>
+        <TextBlock Grid.Row="1" Text="{Binding GamePathDisplay}" TextWrapping="Wrap" Margin="0,2,0,6" Foreground="Black" HorizontalAlignment="Center" TextAlignment="Center"/>
         <Button Grid.Row="2"
                 Content="Change Game Path"
                 Command="{Binding ChangeGamePathCommand}"
@@ -29,7 +29,7 @@
                 Margin="0,0,0,10"
                 Background="#FFFAFBFB"/>
 
-        <TextBlock Grid.Row="3" Text="Launch Mode:" VerticalAlignment="Center" Margin="0,0,10,4"/>
+        <TextBlock Grid.Row="3" Text="Launch Mode:" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,4"/>
 
         <ComboBox Grid.Row="4"
                   Margin="0,0,0,10"
@@ -62,22 +62,38 @@
                                     <ColumnDefinition Width="1.8*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Image Source="{Binding ImagePath}" Width="28" Height="28" Margin="0,0,8,0" Stretch="Fill"/>
-                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <Border Width="64" Height="64" CornerRadius="32" ClipToBounds="True" Margin="0,0,8,0">
+                                        <Image Source="{Binding ImagePath}" Width="64" Height="64" Stretch="Fill"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
                                 </StackPanel>
                                 <Button Grid.Column="1" Content="Launch"
                                         Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}"/>
+                                        CommandParameter="{Binding}"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"/>
                                 <Button Grid.Column="2" Content="Edit" Margin="5,0,0,0"
                                         Command="{Binding DataContext.EditCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}"/>
+                                        CommandParameter="{Binding}"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"/>
                                 <Button Grid.Column="3" Content="Remove" Margin="5,0,0,0"
                                         Command="{Binding DataContext.RemoveCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}"/>
+                                        CommandParameter="{Binding}"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center"/>
                                 <TextBlock Grid.Column="4"
                                            Margin="8,0,0,0"
                                            VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center"
                                            FontWeight="SemiBold"
                                            Text="{Binding RuntimeStatus}"/>
                             </Grid>
@@ -88,7 +104,7 @@
         </Grid>
 
         <Separator Grid.Row="6" Margin="0,8,0,8"/>
-        <TextBlock Grid.Row="7" Text="Status:" FontWeight="SemiBold" Foreground="White"/>
-        <TextBlock Grid.Row="8" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="White"/>
+        <TextBlock Grid.Row="7" Text="Status:" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" TextAlignment="Center"/>
+        <TextBlock Grid.Row="8" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="White" HorizontalAlignment="Center" TextAlignment="Center"/>
     </Grid>
 </Window>
