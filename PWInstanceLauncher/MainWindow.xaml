@@ -7,59 +7,85 @@
         <ImageBrush ImageSource="/gragon.png" Stretch="UniformToFill"/>
     </Window.Background>
 
-    <StackPanel Margin="10">
-        <TextBlock Text="Game Path:" FontWeight="SemiBold"/>
-        <TextBlock Text="{Binding GamePathDisplay}" TextWrapping="Wrap" Margin="0,2,0,6"/>
-        <Button Content="Change Game Path"
-                Width="180"
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Game Path:" FontWeight="SemiBold"/>
+        <TextBlock Grid.Row="1" Text="{Binding GamePathDisplay}" TextWrapping="Wrap" Margin="0,2,0,6"/>
+        <Button Grid.Row="2"
+                Content="Change Game Path"
                 Command="{Binding ChangeGamePathCommand}"
-                Margin="0,0,0,10" Background="#FFFAFBFB"/>
+                HorizontalAlignment="Stretch"
+                Margin="0,0,0,10"
+                Background="#FFFAFBFB"/>
 
-        <TextBlock Text="Launch Mode:" VerticalAlignment="Center" Margin="0,0,10,4"/>
+        <TextBlock Grid.Row="3" Text="Launch Mode:" VerticalAlignment="Center" Margin="0,0,10,4"/>
 
-        <ComboBox Width="220"
+        <ComboBox Grid.Row="4"
                   Margin="0,0,0,10"
+                  HorizontalAlignment="Stretch"
                   ItemsSource="{Binding LaunchModes}"
                   SelectedItem="{Binding Config.LaunchMode, Mode=TwoWay}"/>
 
-        <Button Content="Add Character"
-                Command="{Binding AddCharacterCommand}"
-                Margin="0,0,0,10"/>
+        <Grid Grid.Row="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <ItemsControl ItemsSource="{Binding Characters}">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Grid Margin="0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="70"/>
-                            <ColumnDefinition Width="55"/>
-                            <ColumnDefinition Width="70"/>
-                            <ColumnDefinition Width="80"/>
-                        </Grid.ColumnDefinitions>
+            <Button Grid.Row="0"
+                    Content="Add Character"
+                    Command="{Binding AddCharacterCommand}"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,0,0,10"/>
 
-                        <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" Content="Launch"
-                                Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding}"/>
-                        <Button Grid.Column="2" Content="Edit" Margin="5,0,0,0"
-                                Command="{Binding DataContext.EditCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding}"/>
-                        <Button Grid.Column="3" Content="Remove" Margin="5,0,0,0"
-                                Command="{Binding DataContext.RemoveCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding}"/>
-                        <TextBlock Grid.Column="4"
-                                   Margin="8,0,0,0"
-                                   VerticalAlignment="Center"
-                                   FontWeight="SemiBold"
-                                   Text="{Binding RuntimeStatus}"/>
-                    </Grid>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Characters}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2.8*"/>
+                                    <ColumnDefinition Width="1.4*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1.4*"/>
+                                    <ColumnDefinition Width="1.8*"/>
+                                </Grid.ColumnDefinitions>
 
-        <Separator Margin="0,8,0,8"/>
-        <TextBlock Text="Status:" FontWeight="SemiBold"/>
-        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
-    </StackPanel>
+                                <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Content="Launch"
+                                        Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"/>
+                                <Button Grid.Column="2" Content="Edit" Margin="5,0,0,0"
+                                        Command="{Binding DataContext.EditCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"/>
+                                <Button Grid.Column="3" Content="Remove" Margin="5,0,0,0"
+                                        Command="{Binding DataContext.RemoveCharacterCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"/>
+                                <TextBlock Grid.Column="4"
+                                           Margin="8,0,0,0"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding RuntimeStatus}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <Separator Grid.Row="6" Margin="0,8,0,8"/>
+        <TextBlock Grid.Row="7" Text="Status:" FontWeight="SemiBold"/>
+        <TextBlock Grid.Row="8" Text="{Binding StatusMessage}" TextWrapping="Wrap"/>
+    </Grid>
 </Window>
