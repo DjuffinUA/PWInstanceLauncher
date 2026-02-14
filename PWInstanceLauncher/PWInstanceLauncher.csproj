@@ -12,20 +12,11 @@
     <None Remove="gragon.png" />
     <None Remove="imeges\clas\Archer.png" />
     <None Remove="imeges\clas\Assassin.png" />
-    <None Remove="imeges\clas\dru.png" />
     <None Remove="imeges\clas\Druid.png" />
-    <None Remove="imeges\clas\luk.png" />
-    <None Remove="imeges\clas\mag.png" />
-    <None Remove="imeges\clas\mist.png" />
     <None Remove="imeges\clas\Mystic.png" />
-    <None Remove="imeges\clas\priest.png" />
+    <None Remove="imeges\clas\Priest.png" />
     <None Remove="imeges\clas\Seeker.png" />
-    <None Remove="imeges\clas\sham.png" />
     <None Remove="imeges\clas\Shaman.png" />
-    <None Remove="imeges\clas\sik.png" />
-    <None Remove="imeges\clas\sin.png" />
-    <None Remove="imeges\clas\tank.png" />
-    <None Remove="imeges\clas\var.png" />
     <None Remove="imeges\clas\Warrior.png" />
     <None Remove="imeges\clas\Werewolf.png" />
     <None Remove="imeges\clas\Wizard.png" />
@@ -52,10 +43,6 @@
     <Resource Include="imeges\clas\Wizard.png" />
     <Resource Include="PWInstanceLauncher.png" />
     <Resource Include="Views\PWInstanceLauncher.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="imeges\icon\" />
   </ItemGroup>
 
 </Project>
