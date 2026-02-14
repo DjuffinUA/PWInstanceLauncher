@@ -8,24 +8,26 @@
     <Window.Background>
         <ImageBrush ImageSource="/gragon.png" Stretch="None"/>
     </Window.Background>
-    <StackPanel Margin="10">
-        <TextBlock Text="Name" />
-        <TextBox x:Name="NameBox" Margin="0,4,0,8"/>
+    <StackPanel Margin="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Text="Name" HorizontalAlignment="Center" TextAlignment="Center"/>
+        <TextBox x:Name="NameBox" Margin="0,4,0,8" Width="330" HorizontalContentAlignment="Center" TextAlignment="Center"/>
 
-        <TextBlock Text="Login" />
-        <TextBox x:Name="LoginBox" Margin="0,4,0,8"/>
+        <TextBlock Text="Login" HorizontalAlignment="Center" TextAlignment="Center"/>
+        <TextBox x:Name="LoginBox" Margin="0,4,0,8" Width="330" HorizontalContentAlignment="Center" TextAlignment="Center"/>
 
-        <TextBlock Text="Password" />
-        <PasswordBox x:Name="PasswordBox" Margin="0,4,0,4"/>
+        <TextBlock Text="Password" HorizontalAlignment="Center" TextAlignment="Center"/>
+        <PasswordBox x:Name="PasswordBox" Margin="0,4,0,4" Width="330" HorizontalContentAlignment="Center"/>
         <TextBlock x:Name="PasswordHint"
                    Text="Leave empty to keep current password"
                    Foreground="White"
-                   Margin="0,0,0,8"/>
+                   Margin="0,0,0,8"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"/>
 
-        <TextBlock Text="Character image" Foreground="White"/>
-        <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
-            <Border Width="56" Height="56" BorderBrush="White" BorderThickness="1" Margin="0,0,10,0">
-                <Image x:Name="SelectedImagePreview" Width="56" Height="56" Stretch="Fill"/>
+        <TextBlock Text="Character image" Foreground="White" HorizontalAlignment="Center" TextAlignment="Center"/>
+        <StackPanel Orientation="Horizontal" Margin="0,4,0,8" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Width="64" Height="64" BorderBrush="White" BorderThickness="1" CornerRadius="32" ClipToBounds="True" Margin="0,0,10,0">
+                <Image x:Name="SelectedImagePreview" Width="64" Height="64" Stretch="Fill"/>
             </Border>
             <ComboBox x:Name="ImagePathBox"
                       Width="330"
@@ -35,6 +37,6 @@
                       Foreground="Black"/>
         </StackPanel>
 
-        <Button Content="Save" Click="Save_Click" Margin="0,8,0,0"/>
+        <Button Content="Save" Click="Save_Click" Margin="0,8,0,0" Width="200" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
     </StackPanel>
 </Window>
