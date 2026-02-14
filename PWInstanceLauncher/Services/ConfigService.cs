@@ -74,7 +74,8 @@ namespace PWInstanceLauncher.Services
                 {
                     Name = character.Name?.Trim() ?? string.Empty,
                     Login = character.Login?.Trim() ?? string.Empty,
-                    EncryptedPassword = character.EncryptedPassword ?? string.Empty
+                    EncryptedPassword = character.EncryptedPassword ?? string.Empty,
+                    ImagePath = character.ImagePath?.Trim() ?? string.Empty
                 });
             }
 

@@ -192,6 +192,7 @@ namespace PWInstanceLauncher.ViewModels
             var oldName = profile.Name;
             var oldLogin = profile.Login;
             var oldEncryptedPassword = profile.EncryptedPassword;
+            var oldImagePath = profile.ImagePath;
 
             var window = new EditCharacterWindow(profile);
             if (window.ShowDialog() == true)
@@ -202,6 +203,7 @@ namespace PWInstanceLauncher.ViewModels
                     profile.Name = oldName;
                     profile.Login = oldLogin;
                     profile.EncryptedPassword = oldEncryptedPassword;
+                    profile.ImagePath = oldImagePath;
                     return;
                 }
 
