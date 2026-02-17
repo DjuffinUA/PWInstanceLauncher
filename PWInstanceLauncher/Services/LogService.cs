@@ -2,7 +2,7 @@ using System.IO;
 
 namespace PWInstanceLauncher.Services
 {
-    internal class LogService
+    public class LogService
     {
         private readonly string _logPath;
         private readonly object _syncRoot = new();
