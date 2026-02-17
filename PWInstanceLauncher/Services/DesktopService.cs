@@ -5,7 +5,17 @@ namespace PWInstanceLauncher.Services
 {
     public class DesktopService
     {
-        private readonly Dictionary<string, VirtualDesktop> _desktopByLogin = new(StringComparer.OrdinalIgnoreCase);
+        private readonly IDesktopAssignmentService _desktopAssignments;
+
+        public DesktopService()
+            : this(new DesktopAssignmentService())
+        {
+        }
+
+        public DesktopService(IDesktopAssignmentService desktopAssignments)
+        {
+            _desktopAssignments = desktopAssignments ?? throw new ArgumentNullException(nameof(desktopAssignments));
+        }
 
         public void PlaceWindowOnCharacterDesktop(string login, IntPtr windowHandle)
         {
@@ -50,7 +60,7 @@ namespace PWInstanceLauncher.Services
 
         public bool TrySwitchToCharacterDesktop(string login, IntPtr windowHandle)
         {
-            if (string.IsNullOrWhiteSpace(login) || !_desktopByLogin.TryGetValue(login, out var desktop))
+            if (!_desktopAssignments.TryGet(login, out var desktop) || desktop is null)
             {
                 return false;
             }
@@ -62,19 +72,28 @@ namespace PWInstanceLauncher.Services
 
         private VirtualDesktop GetOrCreateDesktop(string login)
         {
-            if (string.IsNullOrWhiteSpace(login))
-            {
-                throw new ArgumentException("Login is required for desktop mapping.", nameof(login));
-            }
-
-            if (_desktopByLogin.TryGetValue(login, out var existing))
+            if (_desktopAssignments.TryGet(login, out var existing) && existing is not null)
             {
                 return existing;
             }
 
             var created = VirtualDesktop.Create();
-            _desktopByLogin[login] = created;
-            return created;
+            return _desktopAssignments.Assign(login, created);
+        }
+
+        public bool TryRepairCharacterDesktop(string login, IntPtr windowHandle)
+        {
+            return _desktopAssignments.RepairFromWindowHandle(login, windowHandle, out _);
+        }
+
+        public bool UnassignCharacterDesktop(string login)
+        {
+            return _desktopAssignments.Unassign(login);
+        }
+
+        public void UnassignAllCharacterDesktops()
+        {
+            _desktopAssignments.UnassignAll();
         }
 
         private static void EnsureHandle(IntPtr windowHandle)
