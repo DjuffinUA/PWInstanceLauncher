@@ -23,7 +23,7 @@ namespace PWInstanceLauncher.Services
                     continue;
                 }
 
-                if (commandLine.Contains($"user:{login}", StringComparison.OrdinalIgnoreCase))
+                if (CommandLineContainsLogin(commandLine, login))
                 {
                     return process;
                 }
@@ -68,6 +68,28 @@ namespace PWInstanceLauncher.Services
             }
 
             return IntPtr.Zero;
+        }
+
+
+        private static bool CommandLineContainsLogin(string commandLine, string login)
+        {
+            var target = $"user:{login}";
+            var index = commandLine.IndexOf(target, StringComparison.OrdinalIgnoreCase);
+            while (index >= 0)
+            {
+                var endIndex = index + target.Length;
+                var hasBoundary = endIndex >= commandLine.Length ||
+                                  char.IsWhiteSpace(commandLine[endIndex]) ||
+                                  commandLine[endIndex] == '"';
+                if (hasBoundary)
+                {
+                    return true;
+                }
+
+                index = commandLine.IndexOf(target, index + 1, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
         }
 
         private static string BuildArguments(string login, string password)
