@@ -45,6 +45,7 @@ namespace PWInstanceLauncher.Services
         private readonly ICredentialService _credentialService;
         private readonly LogService _logService;
         private readonly Dictionary<string, int> _runningProcessByLogin = new(StringComparer.OrdinalIgnoreCase);
+        private int _monitorCycle;
 
         public LauncherCoordinator(IProcessService processService, IDesktopService desktopService, ICredentialService credentialService)
         {
@@ -79,6 +80,7 @@ namespace PWInstanceLauncher.Services
         public IReadOnlyList<string> MonitorRunningProcesses(IReadOnlyCollection<CharacterProfile> profiles)
         {
             var updates = new List<string>();
+            _monitorCycle++;
 
             foreach (var login in _runningProcessByLogin.Keys.ToList())
             {
@@ -97,10 +99,17 @@ namespace PWInstanceLauncher.Services
                 updates.Add($"{login} switched to Offline.");
             }
 
+            var shouldProbeOfflineProfiles = _monitorCycle % 3 == 0;
             foreach (var profile in profiles)
             {
                 if (string.IsNullOrWhiteSpace(profile.Login) || _runningProcessByLogin.ContainsKey(profile.Login))
                 {
+                    continue;
+                }
+
+                if (!shouldProbeOfflineProfiles)
+                {
+                    TransitionToOffline(profile);
                     continue;
                 }
 

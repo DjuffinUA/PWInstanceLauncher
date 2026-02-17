@@ -7,6 +7,10 @@ namespace PWInstanceLauncher.Services
     internal class ProcessService : IProcessService
     {
         private const string ProcessName = "elementclient";
+        private static readonly TimeSpan CommandLineCacheTtl = TimeSpan.FromSeconds(5);
+
+        private readonly Dictionary<string, int> _cachedPidByLogin = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<int, CommandLineCacheEntry> _commandLineByPid = new();
 
         public IGameProcess? TryFindRunningByLogin(string login)
         {
@@ -15,9 +19,20 @@ namespace PWInstanceLauncher.Services
                 return null;
             }
 
+            if (_cachedPidByLogin.TryGetValue(login, out var cachedPid))
+            {
+                var cachedProcess = TryResolveProcess(cachedPid, login);
+                if (cachedProcess is not null)
+                {
+                    return cachedProcess;
+                }
+
+                _cachedPidByLogin.Remove(login);
+            }
+
             foreach (var process in Process.GetProcessesByName(ProcessName))
             {
-                var commandLine = TryGetProcessCommandLine(process.Id);
+                var commandLine = GetProcessCommandLine(process.Id);
                 if (string.IsNullOrWhiteSpace(commandLine))
                 {
                     continue;
@@ -25,11 +40,60 @@ namespace PWInstanceLauncher.Services
 
                 if (CommandLineContainsLogin(commandLine, login))
                 {
+                    _cachedPidByLogin[login] = process.Id;
                     return new SystemGameProcess(process);
                 }
             }
 
             return null;
+        }
+
+        private IGameProcess? TryResolveProcess(int processId, string login)
+        {
+            try
+            {
+                var process = Process.GetProcessById(processId);
+                if (process.HasExited)
+                {
+                    return null;
+                }
+
+                var commandLine = GetProcessCommandLine(processId);
+                return !string.IsNullOrWhiteSpace(commandLine) && CommandLineContainsLogin(commandLine, login)
+                    ? new SystemGameProcess(process)
+                    : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private string? GetProcessCommandLine(int processId)
+        {
+            var now = DateTime.UtcNow;
+            if (_commandLineByPid.TryGetValue(processId, out var cached) && cached.ExpiresAt > now)
+            {
+                return cached.CommandLine;
+            }
+
+            var commandLine = TryGetProcessCommandLine(processId);
+            _commandLineByPid[processId] = new CommandLineCacheEntry(commandLine, now + CommandLineCacheTtl);
+
+            if (_commandLineByPid.Count > 512)
+            {
+                PruneExpiredCommandLines(now);
+            }
+
+            return commandLine;
+        }
+
+        private void PruneExpiredCommandLines(DateTime now)
+        {
+            foreach (var pid in _commandLineByPid.Where(item => item.Value.ExpiresAt <= now).Select(item => item.Key).ToList())
+            {
+                _commandLineByPid.Remove(pid);
+            }
         }
 
         public IGameProcess Launch(string gamePath, string login, string password)
@@ -131,6 +195,18 @@ namespace PWInstanceLauncher.Services
             {
                 return null;
             }
+        }
+
+        private readonly struct CommandLineCacheEntry
+        {
+            public CommandLineCacheEntry(string? commandLine, DateTime expiresAt)
+            {
+                CommandLine = commandLine;
+                ExpiresAt = expiresAt;
+            }
+
+            public string? CommandLine { get; }
+            public DateTime ExpiresAt { get; }
         }
     }
 

@@ -71,6 +71,42 @@ public class LauncherCoordinatorTests
         Assert.Equal(1, desktopService.UnassignCalls);
     }
 
+
+    [Fact]
+    public void MonitorRunningProcesses_UsesDifferentiatedPolling_ForOfflineProfiles()
+    {
+        var processService = new FakeProcessService();
+        var desktopService = new FakeDesktopService();
+        var credentialService = new FakeCredentialService();
+        var profile = new CharacterProfile { Name = "Main", Login = "main", EncryptedPassword = "enc", RuntimeStatus = "Offline" };
+        processService.RunningByLogin["main"] = null;
+
+        var sut = new LauncherCoordinator(processService, desktopService, credentialService);
+
+        sut.MonitorRunningProcesses(new[] { profile });
+        sut.MonitorRunningProcesses(new[] { profile });
+        sut.MonitorRunningProcesses(new[] { profile });
+
+        Assert.Equal(1, processService.TryFindCallsByLogin["main"]);
+    }
+
+    [Fact]
+    public void MonitorRunningProcesses_DetectsOfflineProfile_OnScheduledProbe()
+    {
+        var processService = new FakeProcessService();
+        var desktopService = new FakeDesktopService();
+        var credentialService = new FakeCredentialService();
+        var profile = new CharacterProfile { Name = "Main", Login = "main", EncryptedPassword = "enc", RuntimeStatus = "Offline" };
+        processService.RunningByLogin["main"] = new FakeGameProcess(301, hasExited: false, mainWindowHandle: new IntPtr(11));
+
+        var sut = new LauncherCoordinator(processService, desktopService, credentialService);
+
+        sut.MonitorRunningProcesses(new[] { profile });
+        sut.MonitorRunningProcesses(new[] { profile });
+        sut.MonitorRunningProcesses(new[] { profile });
+
+        Assert.Equal("Running", profile.RuntimeStatus);
+    }
     [Fact]
     public void HandleLoginChange_UnassignsDesktop_WhenReassignFails()
     {
@@ -90,6 +126,7 @@ public class LauncherCoordinatorTests
     {
         public Dictionary<string, FakeGameProcess?> RunningByLogin { get; } = new(StringComparer.OrdinalIgnoreCase);
         public Dictionary<int, bool> AliveByProcessId { get; } = new();
+        public Dictionary<string, int> TryFindCallsByLogin { get; } = new(StringComparer.OrdinalIgnoreCase);
         public FakeGameProcess? ProcessToLaunch { get; set; }
         public IntPtr WaitForWindowHandleResult { get; set; }
         public int LaunchCalls { get; private set; }
@@ -107,6 +144,7 @@ public class LauncherCoordinatorTests
 
         public IGameProcess? TryFindRunningByLogin(string login)
         {
+            TryFindCallsByLogin[login] = TryFindCallsByLogin.TryGetValue(login, out var count) ? count + 1 : 1;
             return RunningByLogin.TryGetValue(login, out var process) ? process : null;
         }
 
