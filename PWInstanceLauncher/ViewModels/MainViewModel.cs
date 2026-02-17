@@ -119,7 +119,11 @@ namespace PWInstanceLauncher.ViewModels
                 if (!IsProcessAlive(_runningProcessByLogin[login]))
                 {
                     _runningProcessByLogin.Remove(login);
-                    _desktopService.UnassignCharacterDesktop(login);
+                    if (ShouldUnassignDesktop(login))
+                    {
+                        _desktopService.UnassignCharacterDesktop(login);
+                    }
+
                     SetStatusByLogin(login, "Offline");
                     SetInfo($"{login} switched to Offline.");
                 }
@@ -135,7 +139,7 @@ namespace PWInstanceLauncher.ViewModels
                 var process = _processService.TryFindRunningByLogin(profile.Login);
                 if (process is null || process.HasExited)
                 {
-                    SetStatus(profile, "Offline");
+                    TransitionToOffline(profile);
                     continue;
                 }
 
@@ -210,8 +214,7 @@ namespace PWInstanceLauncher.ViewModels
 
                 if (!string.Equals(oldLogin, profile.Login, StringComparison.OrdinalIgnoreCase))
                 {
-                    _runningProcessByLogin.Remove(oldLogin);
-                    _desktopService.UnassignCharacterDesktop(oldLogin);
+                    HandleLoginChange(oldLogin, profile.Login);
                     SetStatus(profile, "Offline");
                 }
 
@@ -236,8 +239,7 @@ namespace PWInstanceLauncher.ViewModels
 
             if (result == MessageBoxResult.Yes)
             {
-                _runningProcessByLogin.Remove(profile.Login);
-                _desktopService.UnassignCharacterDesktop(profile.Login);
+                CleanupRuntimeMappings(profile.Login, forceDesktopUnassign: true);
                 Characters.Remove(profile);
                 Save();
                 SetInfo($"Character '{profile.Name}' removed.");
@@ -399,6 +401,52 @@ namespace PWInstanceLauncher.ViewModels
                 MessageBoxImage.Information);
         }
 
+        private void HandleLoginChange(string oldLogin, string newLogin)
+        {
+            if (string.IsNullOrWhiteSpace(oldLogin))
+            {
+                return;
+            }
+
+            _runningProcessByLogin.Remove(oldLogin);
+
+            if (string.IsNullOrWhiteSpace(newLogin) ||
+                !_desktopService.ReassignCharacterDesktop(oldLogin, newLogin))
+            {
+                _desktopService.UnassignCharacterDesktop(oldLogin);
+            }
+        }
+
+        private void CleanupRuntimeMappings(string? login, bool forceDesktopUnassign = false)
+        {
+            if (string.IsNullOrWhiteSpace(login))
+            {
+                return;
+            }
+
+            _runningProcessByLogin.Remove(login);
+            if (forceDesktopUnassign || ShouldUnassignDesktop(login))
+            {
+                _desktopService.UnassignCharacterDesktop(login);
+            }
+        }
+
+        private void TransitionToOffline(CharacterProfile profile)
+        {
+            if (string.Equals(profile.RuntimeStatus, "Running", StringComparison.OrdinalIgnoreCase))
+            {
+                CleanupRuntimeMappings(profile.Login);
+            }
+
+            SetStatus(profile, "Offline");
+        }
+
+        private bool ShouldUnassignDesktop(string login)
+        {
+            var process = _processService.TryFindRunningByLogin(login);
+            return process is null || process.HasExited;
+        }
+
         private bool TryEnsureGamePath(bool forcePrompt = false)
         {
             if (!forcePrompt && _configService.IsGamePathValid(Config.GamePath))
@@ -466,7 +514,7 @@ namespace PWInstanceLauncher.ViewModels
 
             foreach (var login in _runningProcessByLogin.Keys.Where(login => !knownLogins.Contains(login)).ToList())
             {
-                _desktopService.UnassignCharacterDesktop(login);
+                CleanupRuntimeMappings(login, forceDesktopUnassign: true);
             }
         }
 

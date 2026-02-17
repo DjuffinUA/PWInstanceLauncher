@@ -146,6 +146,11 @@ namespace PWInstanceLauncher.Services
             return _desktopAssignments.RepairFromWindowHandle(login, windowHandle, out _);
         }
 
+        public bool ReassignCharacterDesktop(string oldLogin, string newLogin)
+        {
+            return _desktopAssignments.Reassign(oldLogin, newLogin);
+        }
+
         public bool UnassignCharacterDesktop(string login)
         {
             return _desktopAssignments.Unassign(login);

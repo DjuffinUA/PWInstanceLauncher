@@ -27,6 +27,26 @@ namespace PWInstanceLauncher.Services
             return _desktopByLogin.TryGetValue(login, out desktop);
         }
 
+        public bool Reassign(string oldLogin, string newLogin)
+        {
+            EnsureLogin(oldLogin);
+            EnsureLogin(newLogin);
+
+            if (string.Equals(oldLogin, newLogin, StringComparison.OrdinalIgnoreCase))
+            {
+                return _desktopByLogin.ContainsKey(oldLogin);
+            }
+
+            if (!_desktopByLogin.TryGetValue(oldLogin, out var desktop) || desktop is null)
+            {
+                return false;
+            }
+
+            _desktopByLogin.Remove(oldLogin);
+            _desktopByLogin[newLogin] = desktop;
+            return true;
+        }
+
         public bool Unassign(string login)
         {
             if (string.IsNullOrWhiteSpace(login))
