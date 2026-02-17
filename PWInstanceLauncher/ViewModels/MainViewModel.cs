@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using PWInstanceLauncher.Models;
+﻿using PWInstanceLauncher.Models;
 using PWInstanceLauncher.Services;
 using PWInstanceLauncher.Views;
 using System.Collections.ObjectModel;
@@ -15,6 +14,9 @@ namespace PWInstanceLauncher.ViewModels
     {
         private readonly ConfigService _configService = new();
         private readonly LogService _logService = new();
+        private readonly IUserDialogService _dialogService = new UserDialogService();
+        private readonly CharacterRegistryService _characterRegistry = new();
+        private readonly LaunchValidationService _launchValidationService;
         private readonly LauncherCoordinator _launcherCoordinator;
         private readonly DispatcherTimer _monitorTimer;
 
@@ -58,6 +60,8 @@ namespace PWInstanceLauncher.ViewModels
 
         public MainViewModel()
         {
+            _launchValidationService = new LaunchValidationService(_configService, _dialogService);
+
             var processService = new ProcessService();
             var desktopService = new DesktopService();
             var credentialService = new CredentialService();
@@ -67,7 +71,7 @@ namespace PWInstanceLauncher.ViewModels
             Characters = new ObservableCollection<CharacterProfile>(Config.Characters);
             _logService.Info("Application started. Config loaded.");
 
-            if (!TryEnsureGamePath())
+            if (!_launchValidationService.EnsureGamePath(Config, Save))
             {
                 SetInfo("Game executable is not selected.");
                 _logService.Warn("Game path is not selected on startup.");
@@ -141,10 +145,8 @@ namespace PWInstanceLauncher.ViewModels
                 return;
             }
 
-            var oldName = profile.Name;
-            var oldLogin = profile.Login;
-            var oldEncryptedPassword = profile.EncryptedPassword;
-            var oldImagePath = profile.ImagePath;
+            var snapshot = _characterRegistry.CreateSnapshot(profile);
+            var oldLogin = snapshot.Login;
 
             var window = new EditCharacterWindow(profile);
             if (window.ShowDialog() == true)
@@ -152,10 +154,7 @@ namespace PWInstanceLauncher.ViewModels
                 if (!IsLoginUnique(profile.Login, profile))
                 {
                     ShowWarning($"Login '{profile.Login}' already exists. Use unique login.");
-                    profile.Name = oldName;
-                    profile.Login = oldLogin;
-                    profile.EncryptedPassword = oldEncryptedPassword;
-                    profile.ImagePath = oldImagePath;
+                    _characterRegistry.Restore(profile, snapshot);
                     return;
                 }
 
@@ -178,7 +177,7 @@ namespace PWInstanceLauncher.ViewModels
                 return;
             }
 
-            var result = MessageBox.Show(
+            var result = _dialogService.Show(
                 $"Remove character '{profile.Name}'?",
                 "Remove Character",
                 MessageBoxButton.YesNo,
@@ -197,7 +196,7 @@ namespace PWInstanceLauncher.ViewModels
         private void ChangeGamePath()
         {
             var oldPath = Config.GamePath;
-            if (!TryEnsureGamePath(forcePrompt: true))
+            if (!_launchValidationService.EnsureGamePath(Config, Save, forcePrompt: true))
             {
                 return;
             }
@@ -217,7 +216,7 @@ namespace PWInstanceLauncher.ViewModels
 
             try
             {
-                if (!ValidateLaunchInput(profile))
+                if (!_launchValidationService.ValidateLaunchInput(profile, Config, ShowWarning, Save))
                 {
                     return;
                 }
@@ -234,7 +233,7 @@ namespace PWInstanceLauncher.ViewModels
                 if (result.ActionType == LaunchActionType.LaunchedNew)
                 {
                     _logService.Info($"Character '{profile.Name}' launched with PID {result.ProcessId}.");
-                    MessageBox.Show(
+                    _dialogService.Show(
                         $"Character '{profile.Name}' launched successfully (PID: {result.ProcessId}).",
                         "Launch",
                         MessageBoxButton.OK,
@@ -255,62 +254,9 @@ namespace PWInstanceLauncher.ViewModels
             }
         }
 
-        private bool ValidateLaunchInput(CharacterProfile profile)
-        {
-            if (!_configService.IsGamePathValid(Config.GamePath) && !TryEnsureGamePath())
-            {
-                ShowWarning("Game executable is not selected.");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(profile.Login))
-            {
-                ShowWarning("Login is empty.");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(profile.EncryptedPassword))
-            {
-                ShowWarning("Password is missing for this profile.");
-                return false;
-            }
-
-            return true;
-        }
-
         private bool IsLoginUnique(string login, CharacterProfile? current = null)
         {
-            if (string.IsNullOrWhiteSpace(login))
-            {
-                return true;
-            }
-
-            return !Characters.Any(c =>
-                !ReferenceEquals(c, current) &&
-                string.Equals(c.Login, login, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private bool TryEnsureGamePath(bool forcePrompt = false)
-        {
-            if (!forcePrompt && _configService.IsGamePathValid(Config.GamePath))
-            {
-                return true;
-            }
-
-            var dialog = new OpenFileDialog
-            {
-                Filter = "Executable (*.exe)|*.exe",
-                Title = "Select elementclient.exe"
-            };
-
-            if (dialog.ShowDialog() != true)
-            {
-                return false;
-            }
-
-            Config.GamePath = dialog.FileName;
-            Save();
-            return true;
+            return _characterRegistry.IsLoginUnique(Characters, login, current);
         }
 
         private void SetInfo(string text)
@@ -321,14 +267,14 @@ namespace PWInstanceLauncher.ViewModels
         private void ShowWarning(string text)
         {
             SetInfo(text);
-            MessageBox.Show(text, "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _dialogService.Show(text, "Launch", MessageBoxButton.OK, MessageBoxImage.Warning);
             _logService.Warn(text);
         }
 
         private void ShowError(string text)
         {
             SetInfo(text);
-            MessageBox.Show(text, "Launch", MessageBoxButton.OK, MessageBoxImage.Error);
+            _dialogService.Show(text, "Launch", MessageBoxButton.OK, MessageBoxImage.Error);
             _logService.Error(text);
         }
 
