@@ -1,5 +1,6 @@
 using PWInstanceLauncher.Models;
 using PWInstanceLauncher.Services;
+using Xunit;
 
 namespace PWInstanceLauncher.Tests;
 

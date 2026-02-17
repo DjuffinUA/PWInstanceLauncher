@@ -12,7 +12,11 @@ public class RelayCommand : ICommand
         _execute = execute;
     }
 
-    public event EventHandler? CanExecuteChanged;
+    public event EventHandler? CanExecuteChanged
+    {
+        add { }
+        remove { }
+    }
 
     public bool CanExecute(object? parameter) => true;
 
@@ -28,7 +32,11 @@ public class RelayCommand<T> : ICommand
         _execute = execute;
     }
 
-    public event EventHandler? CanExecuteChanged;
+    public event EventHandler? CanExecuteChanged
+    {
+        add { }
+        remove { }
+    }
 
     public bool CanExecute(object? parameter) => true;
 
