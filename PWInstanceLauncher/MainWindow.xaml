@@ -35,7 +35,7 @@
                   Margin="0,0,0,10"
                   HorizontalAlignment="Stretch"
                   ItemsSource="{Binding LaunchModes}"
-                  SelectedItem="{Binding Config.LaunchMode, Mode=TwoWay}"/>
+                  SelectedItem="{Binding SelectedLaunchMode, Mode=TwoWay}"/>
 
         <Grid Grid.Row="5">
             <Grid.RowDefinitions>

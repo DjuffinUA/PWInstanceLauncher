@@ -28,6 +28,24 @@ namespace PWInstanceLauncher.ViewModels
         public ObservableCollection<CharacterProfile> Characters { get; }
         public Array LaunchModes { get; } = Enum.GetValues(typeof(LaunchMode));
 
+        public LaunchMode SelectedLaunchMode
+        {
+            get => Config.LaunchMode;
+            set
+            {
+                if (Config.LaunchMode == value)
+                {
+                    return;
+                }
+
+                Config.LaunchMode = value;
+                Save();
+                OnPropertyChanged();
+                SetInfo($"Launch mode changed to '{value}'.");
+                _logService.Info($"Launch mode changed to '{value}'.");
+            }
+        }
+
         public string StatusMessage
         {
             get => _statusMessage;

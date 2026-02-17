@@ -62,6 +62,11 @@ namespace PWInstanceLauncher.Services
             config.GamePath ??= string.Empty;
             config.Characters ??= new List<CharacterProfile>();
 
+            if (!Enum.IsDefined(typeof(LaunchMode), config.LaunchMode))
+            {
+                config.LaunchMode = LaunchMode.SeparateDesktop;
+            }
+
             var normalizedCharacters = new List<CharacterProfile>();
             foreach (var character in config.Characters)
             {
