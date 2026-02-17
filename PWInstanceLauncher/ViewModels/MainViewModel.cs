@@ -4,7 +4,6 @@ using PWInstanceLauncher.Services;
 using PWInstanceLauncher.Views;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -15,11 +14,8 @@ namespace PWInstanceLauncher.ViewModels
     internal class MainViewModel : INotifyPropertyChanged
     {
         private readonly ConfigService _configService = new();
-        private readonly CredentialService _credentialService = new();
-        private readonly ProcessService _processService = new();
-        private readonly DesktopService _desktopService = new();
         private readonly LogService _logService = new();
-        private readonly Dictionary<string, int> _runningProcessByLogin = new(StringComparer.OrdinalIgnoreCase);
+        private readonly LauncherCoordinator _launcherCoordinator;
         private readonly DispatcherTimer _monitorTimer;
 
         private string _statusMessage = "Ready";
@@ -62,6 +58,11 @@ namespace PWInstanceLauncher.ViewModels
 
         public MainViewModel()
         {
+            var processService = new ProcessService();
+            var desktopService = new DesktopService();
+            var credentialService = new CredentialService();
+            _launcherCoordinator = new LauncherCoordinator(processService, desktopService, credentialService);
+
             Config = _configService.Load();
             Characters = new ObservableCollection<CharacterProfile>(Config.Characters);
             _logService.Info("Application started. Config loaded.");
@@ -84,7 +85,9 @@ namespace PWInstanceLauncher.ViewModels
             };
             _monitorTimer.Tick += (_, _) => MonitorRunningProcessesSafe();
 
-            InitializeRuntimeState();
+            _launcherCoordinator.InitializeRuntimeState(Characters);
+            _logService.Info("Runtime state initialized.");
+
             _monitorTimer.Start();
             if (_configService.IsGamePathValid(Config.GamePath))
             {
@@ -94,94 +97,20 @@ namespace PWInstanceLauncher.ViewModels
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        private void InitializeRuntimeState()
-        {
-            foreach (var profile in Characters)
-            {
-                SetStatus(profile, "Offline");
-
-                if (string.IsNullOrWhiteSpace(profile.Login))
-                {
-                    continue;
-                }
-
-                var process = _processService.TryFindRunningByLogin(profile.Login);
-                if (process is null || process.HasExited)
-                {
-                    continue;
-                }
-
-                RegisterRunningProcess(profile.Login, process.Id);
-                SetStatus(profile, "Running");
-            }
-
-            _logService.Info("Runtime state initialized.");
-        }
-
         private void MonitorRunningProcessesSafe()
         {
             try
             {
-                MonitorRunningProcesses();
+                var updates = _launcherCoordinator.MonitorRunningProcesses(Characters);
+                if (updates.Count > 0)
+                {
+                    SetInfo(updates[^1]);
+                }
             }
             catch (Exception ex)
             {
                 _logService.Error("Process monitor tick failed", ex);
             }
-        }
-
-        private void MonitorRunningProcesses()
-        {
-            foreach (var login in _runningProcessByLogin.Keys.ToList())
-            {
-                if (!IsProcessAlive(_runningProcessByLogin[login]))
-                {
-                    _runningProcessByLogin.Remove(login);
-                    if (ShouldUnassignDesktop(login))
-                    {
-                        _desktopService.UnassignCharacterDesktop(login);
-                    }
-
-                    SetStatusByLogin(login, "Offline");
-                    SetInfo($"{login} switched to Offline.");
-                }
-            }
-
-            foreach (var profile in Characters)
-            {
-                if (string.IsNullOrWhiteSpace(profile.Login) || _runningProcessByLogin.ContainsKey(profile.Login))
-                {
-                    continue;
-                }
-
-                var process = _processService.TryFindRunningByLogin(profile.Login);
-                if (process is null || process.HasExited)
-                {
-                    TransitionToOffline(profile);
-                    continue;
-                }
-
-                RegisterRunningProcess(profile.Login, process.Id);
-                SetStatus(profile, "Running");
-            }
-        }
-
-        private static bool IsProcessAlive(int processId)
-        {
-            try
-            {
-                var process = Process.GetProcessById(processId);
-                return !process.HasExited;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private void RegisterRunningProcess(string login, int processId)
-        {
-            _runningProcessByLogin[login] = processId;
         }
 
         private void AddCharacter()
@@ -232,8 +161,8 @@ namespace PWInstanceLauncher.ViewModels
 
                 if (!string.Equals(oldLogin, profile.Login, StringComparison.OrdinalIgnoreCase))
                 {
-                    HandleLoginChange(oldLogin, profile.Login);
-                    SetStatus(profile, "Offline");
+                    _launcherCoordinator.HandleLoginChange(oldLogin, profile.Login);
+                    profile.RuntimeStatus = "Offline";
                 }
 
                 Save();
@@ -257,7 +186,7 @@ namespace PWInstanceLauncher.ViewModels
 
             if (result == MessageBoxResult.Yes)
             {
-                CleanupRuntimeMappings(profile.Login, forceDesktopUnassign: true);
+                _launcherCoordinator.CleanupRuntimeMappings(profile.Login, forceDesktopUnassign: true);
                 Characters.Remove(profile);
                 Save();
                 SetInfo($"Character '{profile.Name}' removed.");
@@ -293,17 +222,27 @@ namespace PWInstanceLauncher.ViewModels
                     return;
                 }
 
-                var existingProcess = _processService.TryFindRunningByLogin(profile.Login);
-                if (existingProcess is not null && !existingProcess.HasExited)
+                var result = _launcherCoordinator.LaunchOrFocus(profile, Config.GamePath, Config.LaunchMode);
+                SetInfo(result.Message);
+
+                if (result.ActionType == LaunchActionType.Warning)
                 {
-                    RegisterRunningProcess(profile.Login, existingProcess.Id);
-                    SetStatus(profile, "Running");
-                    FocusExistingCharacter(existingProcess, profile.Login);
-                    SetInfo($"Focused running character '{profile.Name}'.");
+                    ShowWarning(result.Message);
                     return;
                 }
 
-                LaunchNewCharacter(profile);
+                if (result.ActionType == LaunchActionType.LaunchedNew)
+                {
+                    _logService.Info($"Character '{profile.Name}' launched with PID {result.ProcessId}.");
+                    MessageBox.Show(
+                        $"Character '{profile.Name}' launched successfully (PID: {result.ProcessId}).",
+                        "Launch",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return;
+                }
+
+                SetInfo($"Focused running character '{profile.Name}'.");
             }
             catch (FormatException)
             {
@@ -351,120 +290,6 @@ namespace PWInstanceLauncher.ViewModels
                 string.Equals(c.Login, login, StringComparison.OrdinalIgnoreCase));
         }
 
-        private void FocusExistingCharacter(Process process, string login)
-        {
-            var windowHandle = process.MainWindowHandle;
-            if (windowHandle == IntPtr.Zero)
-            {
-                windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(5));
-            }
-
-            if (windowHandle == IntPtr.Zero)
-            {
-                ShowWarning("Running process found, but window handle is unavailable.");
-                return;
-            }
-
-            if (Config.LaunchMode == LaunchMode.SeparateDesktop)
-            {
-                var switched = _desktopService.TrySwitchToCharacterDesktop(login, windowHandle);
-                if (!switched && _desktopService.TryRepairCharacterDesktop(login, windowHandle))
-                {
-                    switched = _desktopService.TrySwitchToCharacterDesktop(login, windowHandle);
-                }
-
-                switched = switched || _desktopService.SwitchToDesktopWithWindow(windowHandle);
-
-                if (!switched)
-                {
-                    _desktopService.ActivateWindow(windowHandle);
-                    ShowWarning("Could not switch desktop. Window has been activated on current desktop.");
-                }
-
-                return;
-            }
-
-            _desktopService.MoveWindowToCurrentDesktop(windowHandle);
-        }
-
-        private void LaunchNewCharacter(CharacterProfile profile)
-        {
-            var password = _credentialService.Decrypt(profile.EncryptedPassword);
-            var process = _processService.Launch(Config.GamePath, profile.Login, password);
-            RegisterRunningProcess(profile.Login, process.Id);
-            SetStatus(profile, "Running");
-
-            var windowHandle = _processService.WaitForMainWindowHandle(process, TimeSpan.FromSeconds(30));
-            if (windowHandle == IntPtr.Zero)
-            {
-                ShowWarning("Process started, but main window handle was not detected within timeout.");
-                return;
-            }
-
-            if (Config.LaunchMode == LaunchMode.SeparateDesktop)
-            {
-                _desktopService.PlaceWindowOnCharacterDesktop(profile.Login, windowHandle);
-            }
-            else
-            {
-                _desktopService.MoveWindowToCurrentDesktop(windowHandle);
-            }
-
-            SetInfo($"Character '{profile.Name}' launched.");
-            _logService.Info($"Character '{profile.Name}' launched with PID {process.Id}.");
-            MessageBox.Show(
-                $"Character '{profile.Name}' launched successfully (PID: {process.Id}).",
-                "Launch",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-        }
-
-        private void HandleLoginChange(string oldLogin, string newLogin)
-        {
-            if (string.IsNullOrWhiteSpace(oldLogin))
-            {
-                return;
-            }
-
-            _runningProcessByLogin.Remove(oldLogin);
-
-            if (string.IsNullOrWhiteSpace(newLogin) ||
-                !_desktopService.ReassignCharacterDesktop(oldLogin, newLogin))
-            {
-                _desktopService.UnassignCharacterDesktop(oldLogin);
-            }
-        }
-
-        private void CleanupRuntimeMappings(string? login, bool forceDesktopUnassign = false)
-        {
-            if (string.IsNullOrWhiteSpace(login))
-            {
-                return;
-            }
-
-            _runningProcessByLogin.Remove(login);
-            if (forceDesktopUnassign || ShouldUnassignDesktop(login))
-            {
-                _desktopService.UnassignCharacterDesktop(login);
-            }
-        }
-
-        private void TransitionToOffline(CharacterProfile profile)
-        {
-            if (string.Equals(profile.RuntimeStatus, "Running", StringComparison.OrdinalIgnoreCase))
-            {
-                CleanupRuntimeMappings(profile.Login);
-            }
-
-            SetStatus(profile, "Offline");
-        }
-
-        private bool ShouldUnassignDesktop(string login)
-        {
-            var process = _processService.TryFindRunningByLogin(login);
-            return process is null || process.HasExited;
-        }
-
         private bool TryEnsureGamePath(bool forcePrompt = false)
         {
             if (!forcePrompt && _configService.IsGamePathValid(Config.GamePath))
@@ -486,20 +311,6 @@ namespace PWInstanceLauncher.ViewModels
             Config.GamePath = dialog.FileName;
             Save();
             return true;
-        }
-
-        private void SetStatusByLogin(string login, string status)
-        {
-            var profile = Characters.FirstOrDefault(c => string.Equals(c.Login, login, StringComparison.OrdinalIgnoreCase));
-            if (profile is not null)
-            {
-                SetStatus(profile, status);
-            }
-        }
-
-        private static void SetStatus(CharacterProfile profile, string status)
-        {
-            profile.RuntimeStatus = status;
         }
 
         private void SetInfo(string text)
@@ -525,15 +336,7 @@ namespace PWInstanceLauncher.ViewModels
         {
             Config.Characters = Characters.ToList();
             _configService.Save(Config);
-
-            var knownLogins = new HashSet<string>(
-                Characters.Where(c => !string.IsNullOrWhiteSpace(c.Login)).Select(c => c.Login),
-                StringComparer.OrdinalIgnoreCase);
-
-            foreach (var login in _runningProcessByLogin.Keys.Where(login => !knownLogins.Contains(login)).ToList())
-            {
-                CleanupRuntimeMappings(login, forceDesktopUnassign: true);
-            }
+            _launcherCoordinator.PruneUnknownLogins(Characters.Select(c => c.Login));
         }
 
         private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)

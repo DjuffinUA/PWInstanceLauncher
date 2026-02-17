@@ -4,11 +4,11 @@ using System.Management;
 
 namespace PWInstanceLauncher.Services
 {
-    internal class ProcessService
+    internal class ProcessService : IProcessService
     {
         private const string ProcessName = "elementclient";
 
-        public Process? TryFindRunningByLogin(string login)
+        public IGameProcess? TryFindRunningByLogin(string login)
         {
             if (string.IsNullOrWhiteSpace(login))
             {
@@ -25,14 +25,14 @@ namespace PWInstanceLauncher.Services
 
                 if (CommandLineContainsLogin(commandLine, login))
                 {
-                    return process;
+                    return new SystemGameProcess(process);
                 }
             }
 
             return null;
         }
 
-        public Process Launch(string gamePath, string login, string password)
+        public IGameProcess Launch(string gamePath, string login, string password)
         {
             var workingDir = Path.GetDirectoryName(gamePath);
             if (string.IsNullOrWhiteSpace(workingDir))
@@ -48,20 +48,26 @@ namespace PWInstanceLauncher.Services
                 UseShellExecute = true
             };
 
-            return Process.Start(psi) ?? throw new InvalidOperationException("Failed to start game process.");
+            var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start game process.");
+            return new SystemGameProcess(process);
         }
 
-        public IntPtr WaitForMainWindowHandle(Process process, TimeSpan timeout)
+        public IntPtr WaitForMainWindowHandle(IGameProcess process, TimeSpan timeout)
         {
+            if (process is not SystemGameProcess systemProcess)
+            {
+                throw new ArgumentException("Unsupported game process type.", nameof(process));
+            }
+
             var startedAt = DateTime.UtcNow;
 
-            while (!process.HasExited && DateTime.UtcNow - startedAt < timeout)
+            while (!systemProcess.Process.HasExited && DateTime.UtcNow - startedAt < timeout)
             {
-                process.Refresh();
+                systemProcess.Process.Refresh();
 
-                if (process.MainWindowHandle != IntPtr.Zero)
+                if (systemProcess.Process.MainWindowHandle != IntPtr.Zero)
                 {
-                    return process.MainWindowHandle;
+                    return systemProcess.Process.MainWindowHandle;
                 }
 
                 Thread.Sleep(250);
@@ -70,6 +76,18 @@ namespace PWInstanceLauncher.Services
             return IntPtr.Zero;
         }
 
+        public bool IsProcessAlive(int processId)
+        {
+            try
+            {
+                var process = Process.GetProcessById(processId);
+                return !process.HasExited;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         private static bool CommandLineContainsLogin(string commandLine, string login)
         {
@@ -114,5 +132,18 @@ namespace PWInstanceLauncher.Services
                 return null;
             }
         }
+    }
+
+    internal sealed class SystemGameProcess : IGameProcess
+    {
+        public SystemGameProcess(Process process)
+        {
+            Process = process;
+        }
+
+        public Process Process { get; }
+        public int Id => Process.Id;
+        public bool HasExited => Process.HasExited;
+        public IntPtr MainWindowHandle => Process.MainWindowHandle;
     }
 }
