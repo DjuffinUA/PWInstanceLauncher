@@ -5,6 +5,7 @@ namespace PWInstanceLauncher.Services
     public class DesktopAssignmentService : IDesktopAssignmentService
     {
         private readonly Dictionary<string, VirtualDesktop> _desktopByLogin = new(StringComparer.OrdinalIgnoreCase);
+        private readonly LogService _logService = new();
 
         public VirtualDesktop Assign(string login, VirtualDesktop desktop)
         {
@@ -63,8 +64,9 @@ namespace PWInstanceLauncher.Services
                 desktop = Assign(login, detectedDesktop);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logService.Error($"Failed to repair desktop assignment for '{login}' from window handle.", ex);
                 desktop = null;
                 return false;
             }
