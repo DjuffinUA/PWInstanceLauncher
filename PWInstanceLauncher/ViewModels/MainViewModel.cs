@@ -119,6 +119,7 @@ namespace PWInstanceLauncher.ViewModels
                 if (!IsProcessAlive(_runningProcessByLogin[login]))
                 {
                     _runningProcessByLogin.Remove(login);
+                    _desktopService.UnassignCharacterDesktop(login);
                     SetStatusByLogin(login, "Offline");
                     SetInfo($"{login} switched to Offline.");
                 }
@@ -210,6 +211,7 @@ namespace PWInstanceLauncher.ViewModels
                 if (!string.Equals(oldLogin, profile.Login, StringComparison.OrdinalIgnoreCase))
                 {
                     _runningProcessByLogin.Remove(oldLogin);
+                    _desktopService.UnassignCharacterDesktop(oldLogin);
                     SetStatus(profile, "Offline");
                 }
 
@@ -235,6 +237,7 @@ namespace PWInstanceLauncher.ViewModels
             if (result == MessageBoxResult.Yes)
             {
                 _runningProcessByLogin.Remove(profile.Login);
+                _desktopService.UnassignCharacterDesktop(profile.Login);
                 Characters.Remove(profile);
                 Save();
                 SetInfo($"Character '{profile.Name}' removed.");
@@ -344,8 +347,13 @@ namespace PWInstanceLauncher.ViewModels
 
             if (Config.LaunchMode == LaunchMode.SeparateDesktop)
             {
-                var switched = _desktopService.TrySwitchToCharacterDesktop(login, windowHandle)
-                               || _desktopService.SwitchToDesktopWithWindow(windowHandle);
+                var switched = _desktopService.TrySwitchToCharacterDesktop(login, windowHandle);
+                if (!switched && _desktopService.TryRepairCharacterDesktop(login, windowHandle))
+                {
+                    switched = _desktopService.TrySwitchToCharacterDesktop(login, windowHandle);
+                }
+
+                switched = switched || _desktopService.SwitchToDesktopWithWindow(windowHandle);
 
                 if (!switched)
                 {
@@ -451,6 +459,15 @@ namespace PWInstanceLauncher.ViewModels
         {
             Config.Characters = Characters.ToList();
             _configService.Save(Config);
+
+            var knownLogins = new HashSet<string>(
+                Characters.Where(c => !string.IsNullOrWhiteSpace(c.Login)).Select(c => c.Login),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var login in _runningProcessByLogin.Keys.Where(login => !knownLogins.Contains(login)).ToList())
+            {
+                _desktopService.UnassignCharacterDesktop(login);
+            }
         }
 
         private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
