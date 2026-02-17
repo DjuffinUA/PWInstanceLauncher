@@ -3,7 +3,7 @@ using System.Text;
 
 namespace PWInstanceLauncher.Services
 {
-    internal class CredentialService
+    internal class CredentialService : ICredentialService
     {
         public string Encrypt(string password)
         {

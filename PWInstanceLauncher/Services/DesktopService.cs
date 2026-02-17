@@ -3,7 +3,7 @@ using WindowsDesktop;
 
 namespace PWInstanceLauncher.Services
 {
-    public class DesktopService
+    public class DesktopService : IDesktopService
     {
         private readonly IDesktopAssignmentService _desktopAssignments;
         private readonly LogService _logService;
